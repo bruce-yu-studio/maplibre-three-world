@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset='utf-8'>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basic</title>
+  <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.11.0/dist/maplibre-gl.css' />
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      height: 100dvh;
+      width: 100dvw;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "maplibre-gl": "https://cdn.jsdelivr.net/npm/maplibre-gl/+esm",
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+        "maplibre-three-world": "../../dist/index.mjs"
+      }
+    }
+  </script>
+  <script type="module" src="./main.js"></script>
+</body>
+
+</html>

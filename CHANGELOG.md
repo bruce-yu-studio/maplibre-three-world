@@ -1,0 +1,11 @@
+# Maplibre Three World Changelog
+
+
+## [1.0.0] - 2025-12-10
+
+### Added
+- Initial release of Maplibre Three World.
+- Integration of Three.js 3D models (mesh, GLTF, FBX) into Maplibre maps.
+- `ThreeLayer` for managing 3D objects with Maplibre-like API, event system, and zoom/visibility control.
+- `ThreeModel` with scale, rotation, and popup support.
+- Full TypeScript support with typed options, events, and models.
