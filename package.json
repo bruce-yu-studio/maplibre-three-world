@@ -12,7 +12,12 @@
   ],
   "author": "Bruce Yu Studio <bruce.yu.studio@gmail.com>",
   "license": "MIT",
-  "main": "index.js",
+  "main": "dist/index.global.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "start": "tsup --watch"
