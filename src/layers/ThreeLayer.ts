@@ -94,12 +94,12 @@ export class ThreeLayer {
    * Layer type, fixed as 'custom' for MapLibre custom layers.
    * @type {string}
    */
-  type: string = 'custom';
+  type: 'custom' = 'custom';
   /**
    * Rendering mode of the layer, currently set to '3d'.
    * @type {string} 
    */
-  renderingMode: string = '3d';
+  renderingMode: '3d' = '3d';
   /**
    * Reference to the MapLibre map instance.
    * @type {Map|undefined}

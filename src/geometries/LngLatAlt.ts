@@ -13,7 +13,7 @@ export type LngLatAltLike = {
   lon: number;
   lat: number;
   alt?: number;
-} | [number, number, number | undefined];
+} | [number, number, number?];
 
 
 /**
