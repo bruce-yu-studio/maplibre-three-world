@@ -47,13 +47,13 @@ export interface ThreeModelRotation {
 export type ThreeModelOptions = {
   url: string;
   type: Exclude<ThreeModelType, 'mesh'>;
-  lngLatAlt?: LngLatAlt;
+  lngLatAlt?: LngLatAltLike;
   scale?: ThreeModelScale;
   rotation?: ThreeModelRotation;
 } | {
   mesh: Mesh;
   type: Extract<ThreeModelType, 'mesh'>;
-  lngLatAlt?: LngLatAlt;
+  lngLatAlt?: LngLatAltLike;
   scale?: ThreeModelScale;
   rotation?: ThreeModelRotation;
 }
