@@ -1,7 +1,7 @@
 import type { Map, LngLat } from 'maplibre-gl';
 import type { ThreeModel } from '../objects/ThreeModel';
 import { LngLatAlt } from '../geometries/LngLatAlt';
-import { Scene, Group, Raycaster, Vector2, AmbientLight } from 'three';
+import { Scene, Group, Raycaster, Vector2, AmbientLight, DirectionalLight } from 'three';
 import { CameraAdapter } from '../core/CameraAdapter';
 import { ThreeRenderer } from '../core/ThreeRenderer';
 import { WORLD_SIZE } from '../configs';
@@ -119,11 +119,11 @@ export class ThreeLayer {
    */
   _world: Group;
   /**
-   * Ambient light for the 3D scene.
+   * The lights for the 3D scene.
    * @type {AmbientLight}
    * @private
    */
-  _light: AmbientLight;
+  _lights: Group;
   /**
    * Internal record of ThreeObjects keyed by their unique ID.
    * @type {Record<number, ThreeObject>}
@@ -186,15 +186,35 @@ export class ThreeLayer {
     this._renderOutsideBounds = options.renderOutsideBounds ?? true;
 
     this._world = new Group();
-    this._world.name = 'ThreeLayer';
+    this._world.name = 'ThreeWorld';
     this._world.position.set(WORLD_SIZE / 2, WORLD_SIZE / 2, 0);
     this._world.matrixAutoUpdate = false;
 
-    this._light = new AmbientLight(0xffffff, 1.0);
+    this._lights = new Group();
+    this._lights.name = 'ThreeLights';
+
+    // TODO: Create ThreeLight
+    // ------------------------------
+    const defaultLight = new Group();
+
+    const ambientLight = new AmbientLight(0xffffff, 0.75);
+    defaultLight.add(ambientLight);
+
+    const directionFrontLight = new DirectionalLight(0xffffff, 0.25);
+    directionFrontLight.position.set(-30, 100, -100);
+    defaultLight.add(directionFrontLight);
+
+    const directionBackLight = new DirectionalLight(0xffffff, 0.25);
+    directionBackLight.position.set(30, 100, 100);
+    defaultLight.add(directionBackLight);
+    // ------------------------------
+
+    this._lights.add(defaultLight);
 
     this._scene = new Scene();
+    this._scene.name = 'ThreeLayer';
     this._scene.add(this._world);
-    this._scene.add(this._light);
+    this._scene.add(this._lights);
   }
 
 
@@ -326,7 +346,7 @@ export class ThreeLayer {
       while (!isFound) {
         if (object.name && object.name.startsWith('Three')) {
           isFound = true;
-        } else if (object.parent && object.parent.name !== 'ThreeLayer') {
+        } else if (object.parent && object.parent.name !== 'ThreeWorld') {
           object = object.parent;
         } else {
           isFound = true;
