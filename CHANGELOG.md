@@ -1,6 +1,12 @@
 # Maplibre Three World Changelog
 
 
+## [1.0.2] - 2025-12-12
+
+### Changed
+- Refined default lighting configuration.
+
+
 ## [1.0.1] - 2025-12-10
 
 ### Fixed
