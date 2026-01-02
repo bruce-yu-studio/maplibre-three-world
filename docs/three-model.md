@@ -10,12 +10,12 @@
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `url` | `string` | URL to load the 3D model. Required if type is `'gltf'` or `'fbx'`. |
-| `mesh` | `THREE.Mesh` | Mesh instance. Required if type is `'mesh'`. |
-| `type` | `'mesh'`, `'gltf'`, `'fbx'` | The type of model to load. |
-| `lngLatAlt` | `LngLatAltLike` | Optional geographic position for the model `[lng, lat, alt]`. |
-| `scale` | `{ x: number, y: number, z: number }` | Optional scale for the model in each axis. Default is `{ x:1, y:1, z:1 }`. |
-| `rotation` | `{ x: number, y: number, z: number }` | Optional rotation in degrees. Default is `{ x:0, y:0, z:0 }`. |
+| `options.url` | `string` | URL to load the 3D model. Required if type is `'gltf'` or `'fbx'`. |
+| `options.mesh` | `THREE.Mesh` | Mesh instance. Required if type is `'mesh'`. |
+| `options.type` | `'mesh'`, `'gltf'`, `'fbx'` | The type of model to load. |
+| `options.lngLatAlt` | `LngLatAltLike` | Optional geographic position for the model `[lng, lat, alt]`. |
+| `options.scale` | `{ x: number, y: number, z: number }` | Optional scale for the model in each axis. Default is `{ x:1, y:1, z:1 }`. |
+| `options.rotation` | `{ x: number, y: number, z: number }` | Optional rotation in degrees. Default is `{ x:0, y:0, z:0 }`. |
 
 
 You can create a `ThreeModel` using either a URL to load a GLTF/FBX model or by providing an existing Three.js Mesh.
@@ -153,7 +153,7 @@ model.togglePopup();
 
 ### addTo
 `addTo(layer: ThreeLayer): this`  
-Adds the model to a `ThreeLayer` and registers internal event listeners.
+Adds the model to a `ThreeLayer`.
 
 **Example:**
 ```javascript
@@ -163,7 +163,7 @@ model.addTo(layer);
 
 ### remove
 `remove(): this`  
-Removes the model from its layer and cleans up associated events.
+Removes the model from its layer.
 
 **Example:**
 ```javascript

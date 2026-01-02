@@ -1,7 +1,8 @@
 import type { Map, LngLat } from 'maplibre-gl';
 import type { ThreeModel } from '../objects/ThreeModel';
+import { ThreeLight } from '../objects/ThreeLight';
 import { LngLatAlt } from '../geometries/LngLatAlt';
-import { Scene, Group, Raycaster, Vector2, AmbientLight, DirectionalLight } from 'three';
+import { Scene, Group, Raycaster, Vector2 } from 'three';
 import { CameraAdapter } from '../core/CameraAdapter';
 import { ThreeRenderer } from '../core/ThreeRenderer';
 import { WORLD_SIZE } from '../configs';
@@ -22,7 +23,9 @@ export type ThreeEventType =
   | 'mouseenter'
   | 'mouseleave'
   | 'addobject'
-  | 'removeobject';
+  | 'removeobject'
+  | 'addlight'
+  | 'removelight';
 
 
 /**
@@ -37,7 +40,7 @@ export type ThreeEvents = Record<ThreeEventType, Set<(args: ThreeEventArgs) => v
 export interface ThreeEventArgs {
   type: ThreeEventType;
   target: any;
-  lngLatAlt: LngLatAlt;
+  lngLatAlt?: LngLatAlt;
   point?: {
     x: number;
     y: number;
@@ -67,6 +70,7 @@ export interface ThreeLayerOptions {
   minzoom?: number;
   maxzoom?: number;
   renderOutsideBounds?: boolean;
+  defaultLight?: boolean;
 }
 
 
@@ -119,17 +123,17 @@ export class ThreeLayer {
    */
   _world: Group;
   /**
-   * The lights for the 3D scene.
-   * @type {AmbientLight}
-   * @private
-   */
-  _lights: Group;
-  /**
    * Internal record of ThreeObjects keyed by their unique ID.
    * @type {Record<number, ThreeObject>}
    * @private
    */
   _objects: Record<number, ThreeObject> = {};
+  /**
+   * Internal record of ThreeObjects keyed by their unique ID.
+   * @type {Record<number, ThreeObject>}
+   * @private
+   */
+  _lights: Record<number, ThreeLight> = {};
   /**
    * Canvas element used for rendering the Three.js scene.
    * @type {HTMLCanvasElement|undefined}
@@ -172,6 +176,8 @@ export class ThreeLayer {
     mouseleave: new Set(),
     addobject: new Set(),
     removeobject: new Set(),
+    addlight: new Set(),
+    removelight: new Set(),
   }
 
 
@@ -181,8 +187,8 @@ export class ThreeLayer {
    */
   constructor(options: ThreeLayerOptions) {
     this.id = options.id;
-    this.minzoom = options.minzoom || 0;
-    this.maxzoom = options.maxzoom || 24;
+    this.minzoom = options.minzoom ?? 0;
+    this.maxzoom = options.maxzoom ?? 24;
     this._renderOutsideBounds = options.renderOutsideBounds ?? true;
 
     this._world = new Group();
@@ -190,31 +196,16 @@ export class ThreeLayer {
     this._world.position.set(WORLD_SIZE / 2, WORLD_SIZE / 2, 0);
     this._world.matrixAutoUpdate = false;
 
-    this._lights = new Group();
-    this._lights.name = 'ThreeLights';
-
-    // TODO: Create ThreeLight
-    // ------------------------------
-    const defaultLight = new Group();
-
-    const ambientLight = new AmbientLight(0xffffff, 0.75);
-    defaultLight.add(ambientLight);
-
-    const directionFrontLight = new DirectionalLight(0xffffff, 0.25);
-    directionFrontLight.position.set(-30, 100, -100);
-    defaultLight.add(directionFrontLight);
-
-    const directionBackLight = new DirectionalLight(0xffffff, 0.25);
-    directionBackLight.position.set(30, 100, 100);
-    defaultLight.add(directionBackLight);
-    // ------------------------------
-
-    this._lights.add(defaultLight);
+    if (options.defaultLight ?? true) {
+      const defaultLight = new ThreeLight({
+        type: 'default'
+      });
+      this._addLight(defaultLight);
+    }
 
     this._scene = new Scene();
     this._scene.name = 'ThreeLayer';
     this._scene.add(this._world);
-    this._scene.add(this._lights);
   }
 
 
@@ -381,6 +372,31 @@ export class ThreeLayer {
     this._world.remove(threeObject._object);
     delete this._objects[threeObject._id];
   }
+
+
+  /**
+   * Adds a ThreeLight to the world and registers it internally.
+   * @param {ThreeLight} threeLight
+   * @returns {void}
+   * @private
+   */
+  _addLight(threeLight: ThreeLight): void {
+    this._world.add(threeLight._light);
+    this._lights[threeLight._id] = threeLight;
+  }
+
+
+  /**
+   * Removes a ThreeLight from the world and unregisters it internally.
+   * @param {ThreeLight} threeLight
+   * @returns {void}
+   * @private
+   */
+  _removeLight(threeLight: ThreeLight): void {
+    this._world.remove(threeLight._light);
+    delete this._lights[threeLight._id];
+  }
+
 
   /**
    * Updates visibility of a ThreeObject based on map bounds and zoom level.
