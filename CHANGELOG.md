@@ -1,6 +1,12 @@
 # Maplibre Three World Changelog
 
 
+## [1.1.0] - 2026-01-02
+
+### Added
+- Added `ThreeLight` class with basic functionality.
+
+
 ## [1.0.2] - 2025-12-12
 
 ### Changed
