@@ -37,6 +37,7 @@ const layer = new ThreeLayer({
   minzoom: 16,
   maxzoom: 24,
   renderOutsideBounds: false,
+  defaultLight: true,
 });
 
 // Create Model
@@ -64,7 +65,7 @@ model.addTo(layer);
 
 ## API & Methods
 
-All available classes, methods, and types are documented under the [docs](./docs) directory.
+All available classes, methods, and types are documented under the [docs](https://github.com/bruce-yu-studio/maplibre-three-world/tree/master/docs) directory.
 For detailed usage, configuration options, and advanced examples, please refer to the documentation there.
 
 
