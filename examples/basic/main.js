@@ -1,5 +1,5 @@
 import maplibregl from 'maplibre-gl';
-import { ThreeLayer, ThreeModel } from 'maplibre-three-world';
+import { ThreeLayer, ThreeModel, ThreeLight } from 'maplibre-three-world';
 
 
 // Initial Map
@@ -22,6 +22,7 @@ const layer = new ThreeLayer({
   minzoom: 16,
   maxzoom: 24,
   renderOutsideBounds: false,
+  defaultLight: false,
 });
 
 
@@ -38,12 +39,24 @@ const model = new ThreeModel({
 });
 
 
+// Create Light
+const light = new ThreeLight({
+  type: 'ambient',
+  color: 0xffffff,
+  intensity: 1,
+})
+
+
 // Map on Load
 await new Promise(resolve => map.once('style.load', resolve));
 
 
 // Add Layer
 map.addLayer(layer);
+
+
+// Add Light
+light.addTo(layer);
 
 
 // Add Model
