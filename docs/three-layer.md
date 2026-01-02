@@ -14,6 +14,7 @@
 | `options.minzoom` | `number` | `0` | Minimum zoom level for rendering objects. |
 | `options.maxzoom` | `number` | `24` | Maximum zoom level for rendering objects. |
 | `options.renderOutsideBounds` | `boolean` | `true` | Whether to render objects outside the current map bounds. |
+| `options.defaultLight` | `boolean` | `true` | Whether to automatically add a default light when the layer is created. |
 
 **Example:**
 ```javascript
@@ -22,6 +23,7 @@ const layer = new ThreeLayer({
   minzoom: 16,
   maxzoom: 24,
   renderOutsideBounds: false,
+  defaultLight: true,
 });
 ```
 
