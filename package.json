@@ -25,10 +25,10 @@
   "devDependencies": {
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
-    "@types/three": "^0.181.0"
+    "@types/three": "^0.130.0"
   },
   "peerDependencies": {
-    "maplibre-gl": "^5.10.0",
-    "three": "^0.181.0"
+    "maplibre-gl": ">=5.0.0 <7.0.0",
+    "three": ">=0.130.0 <1.0.0"
   }
 }
