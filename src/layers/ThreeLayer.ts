@@ -9,7 +9,7 @@ import { WORLD_SIZE } from '../configs';
 
 
 /**
- * Alias for a Three.js model object managed by ThreeLayer.
+ * Alias for a Three.js object managed by ThreeLayer.
  */
 export type ThreeObject = ThreeModel;
 

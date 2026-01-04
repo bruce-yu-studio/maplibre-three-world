@@ -2,14 +2,31 @@
 
 This library enables developers to manage Three.js objects using a MapLibre-like API, simplifying the addition, control, and interaction of 3D objects on maps.
 
+![Maplibre Three World Cover](./docs/images/cover.png)
+
 
 ## Installation
 
-> Note: You need to install `maplibre-gl` and `three` separately.
+> Note: This library requires `maplibre-gl` and `three` as peer dependencies.  
+> Make sure to install them in your project if you haven't already.
 
 ```bash
+# Install the library
 npm install maplibre-three-world
+
+# Install peer dependencies
+npm install maplibre-gl three
 ```
+
+
+## Supported Versions
+
+To ensure compatibility, please use versions within the following ranges:
+
+- `maplibre-gl`: >=5.0.0
+- `three`: >=0.130.0
+
+Using versions outside these ranges may result in unexpected behavior.
 
 
 ## Basic Usage
