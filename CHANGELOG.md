@@ -1,6 +1,16 @@
 # Maplibre Three World Changelog
 
 
+## [1.1.1] - 2026-01-04
+
+### Added
+- Add peerDependencies version requirements for maplibre-gl (>=5.0.0) and three (>=0.130.0)".
+
+### Documentation
+- Add peerDependencies version requirements to README.md.
+- Add cover image to README.md.
+
+
 ## [1.1.0] - 2026-01-02
 
 ### Added
