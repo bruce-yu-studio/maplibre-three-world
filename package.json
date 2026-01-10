@@ -1,6 +1,6 @@
 {
   "name": "maplibre-three-world",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Seamlessly integrates MapLibre GL JS with Three.js, enabling 3D map visualizations, model rendering, and interactive events.",
   "keywords": [
     "maplibre",
@@ -12,11 +12,18 @@
   ],
   "author": "Bruce Yu Studio <bruce.yu.studio@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bruce-yu-studio/maplibre-three-world.git"
+  },
   "main": "dist/index.global.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.mts",
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup",
@@ -25,7 +32,7 @@
   "devDependencies": {
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
-    "@types/three": "^0.130.0"
+    "@types/three": "^0.150.0"
   },
   "peerDependencies": {
     "maplibre-gl": ">=5.0.0 <7.0.0",

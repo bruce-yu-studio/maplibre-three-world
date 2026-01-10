@@ -1,6 +1,15 @@
 # Maplibre Three World Changelog
 
 
+## [1.1.2] - 2026-01-10
+
+### Fixed
+- Revised the Three.js type definitions version used during library development.
+
+### Chore
+- Add automated npm publish workflow.
+
+
 ## [1.1.1] - 2026-01-04
 
 ### Added
