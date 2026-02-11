@@ -1,6 +1,6 @@
-import type { Map, LngLat } from 'maplibre-gl';
+import type { Map, LngLat, LngLatBounds } from 'maplibre-gl';
 import type { ThreeModel } from '../objects/ThreeModel';
-import { ThreeLight } from '../objects/ThreeLight';
+import { ThreeLight } from '../lights/ThreeLight';
 import { LngLatAlt } from '../geometries/LngLatAlt';
 import { Scene, Group, Raycaster, Vector2 } from 'three';
 import { CameraAdapter } from '../core/CameraAdapter';
@@ -404,19 +404,13 @@ export class ThreeLayer {
    * @returns {void}
    * @private
    */
-  _updateObjectVisibility = (object: ThreeObject): void => {
-    const bounds = this._map!.getBounds();
-    const zoom = this._map!.getZoom();
+  _updateObjectVisibility = (object: ThreeObject, bounds: LngLatBounds, zoom: number): void => {
     const { lng, lat } = object._lngLatAlt!;
 
     const inBounds = this._renderOutsideBounds || bounds.contains([lng, lat]);
     const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
 
-    if (inBounds && inZoomRange) {
-      this._world.add(object._object);
-    } else {
-      this._world.remove(object._object);
-    }
+    object._object.visible = inBounds && inZoomRange;
   }
 
 
@@ -427,7 +421,14 @@ export class ThreeLayer {
    */
   _mapOnMove = (): void => {
     if (this.minzoom === 0 && this.maxzoom === 24 && this._renderOutsideBounds) return;
-    Object.values(this._objects).forEach(this._updateObjectVisibility);
+    if (!this._map) return;
+
+    const bounds = this._map.getBounds();
+    const zoom = this._map.getZoom();
+
+    Object.values(this._objects).forEach(object => {
+      this._updateObjectVisibility(object, bounds, zoom);
+    });
   }
 
 

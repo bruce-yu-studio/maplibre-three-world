@@ -3,7 +3,7 @@
 
 ## Description
 
-`ThreeModel` represents a 3D object that can be added to a `ThreeLayer`. It supports meshes, GLTF, and FBX models, and allows setting position, rotation, scale, and popups for interaction on a georeferenced map.
+`ThreeModel` represents a 3D object that can be added to a `ThreeLayer`. It supports GLTF, FBX models, and custom `THREE.Object3D` objects, and allows setting position, rotation, scale, and popups for interaction on a georeferenced map.
 
 
 ## Parameters
@@ -11,8 +11,8 @@
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `options.url` | `string` | URL to load the 3D model. Required if type is `'gltf'` or `'fbx'`. |
-| `options.mesh` | `THREE.Mesh` | Mesh instance. Required if type is `'mesh'`. |
-| `options.type` | `'mesh'`, `'gltf'`, `'fbx'` | The type of model to load. |
+| `options.object` | `THREE.Object3D<Event>` | The Three.js object to use for the model. Required if type is `'custom'`. |
+| `options.type` | `'gltf'`, `'fbx'`, `'custom'` | The type of model to load. |
 | `options.lngLatAlt` | `LngLatAltLike` | Optional geographic position for the model `[lng, lat, alt]`. |
 | `options.scale` | `{ x: number, y: number, z: number }` | Optional scale for the model in each axis. Default is `{ x:1, y:1, z:1 }`. |
 | `options.rotation` | `{ x: number, y: number, z: number }` | Optional rotation in degrees. Default is `{ x:0, y:0, z:0 }`. |
@@ -35,18 +35,18 @@ const model = new ThreeModel({
 
 **Example:**
 ```javascript
-// Mesh-based Model
+// Custom THREE.Object3D
 import * as THREE from 'three';
 
 /* ... Initial Map ... */
 
 const geometry = new THREE.BoxGeometry(20, 20, 20);
 const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const mesh = new THREE.Mesh(geometry, material);
+const object = new THREE.Mesh(geometry, material);
 
 const model = new ThreeModel({
-  mesh: mesh,
-  type: 'mesh',
+  object: object,
+  type: 'custom',
   lngLatAlt: [148.9819, -35.39847, 0],
   scale: { x: 1, y: 1, z: 1 },
   rotation: { x: 90, y: 0, z: 0 },
@@ -119,6 +119,21 @@ Sets the rotation of the model in degrees.
 ```javascript
 model.setRotation(90, 0, 45);
 ```
+
+
+### clone
+`clone(): ThreeModel`  
+Returns a clone of the model.
+
+**Example:**
+```javascript
+const baseModel = new ThreeModel(/* options */);
+
+const clonedModel = baseModel.clone();
+clonedModel.setLngLatAlt([148.9819, -35.39847, 0]);
+clonedModel.addTo(layer);
+```
+
 
 
 ### getPopup

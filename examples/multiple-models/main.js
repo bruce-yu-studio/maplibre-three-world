@@ -2,6 +2,15 @@ import maplibregl from 'maplibre-gl';
 import { ThreeLayer, ThreeModel } from 'maplibre-three-world';
 
 
+const MODEL_POSITIONS = [
+  [148.9811, -35.39847, 0],
+  [148.9815, -35.39847, 0],
+  [148.9819, -35.39847, 0],
+  [148.9823, -35.39847, 0],
+  [148.9827, -35.39847, 0],
+];
+
+
 // Initial Map
 const map = new maplibregl.Map({
   container: 'map',
@@ -24,11 +33,10 @@ const layer = new ThreeLayer({
 });
 
 
-// Create Model
-const model = new ThreeModel({
+// Create Base Model
+const baseModel = new ThreeModel({
   url: 'https://maplibre.org/maplibre-gl-js/docs/assets/34M_17/34M_17.gltf',
   type: 'gltf',
-  lngLatAlt: [148.9819, -35.39847, 0],
   rotation: {
     x: 90,
     y: 0,
@@ -45,5 +53,9 @@ await new Promise(resolve => map.once('style.load', resolve));
 map.addLayer(layer);
 
 
-// Add Model
-model.addTo(layer);
+// Add Models
+MODEL_POSITIONS.forEach(position => {
+  const clonedModel = baseModel.clone();
+  clonedModel.setLngLatAlt(position);
+  clonedModel.addTo(layer);
+});
