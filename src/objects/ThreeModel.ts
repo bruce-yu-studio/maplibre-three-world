@@ -1,5 +1,5 @@
 import type { Popup } from 'maplibre-gl';
-import type { Mesh } from 'three';
+import type { Mesh, Object3D, Event } from 'three';
 import type { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import type { ThreeLayer, ThreeEventArgs } from '../layers/ThreeLayer';
@@ -7,15 +7,6 @@ import { Group } from 'three';
 import { LngLatAlt, LngLatAltLike } from '../geometries/LngLatAlt';
 import { lngLatToVector3, projectedUnitsPerMeter } from '../utils';
 import { DEG_TO_RAD } from '../configs';
-
-
-/**
- * Type of 3D model.
- * - 'mesh': a pre-existing Three.js Mesh object.
- * - 'gltf': a GLTF model loaded from URL.
- * - 'fbx': an FBX model loaded from URL.
- */
-export type ThreeModelType = 'mesh' | 'gltf' | 'fbx';
 
 
 /**
@@ -42,17 +33,30 @@ export interface ThreeModelRotation {
  * Options to create a ThreeModel.
  * Can be either:
  * - a URL-based model (GLTF or FBX), or
- * - a pre-existing Three.js Mesh.
+ * - a customize Three.js object
  */
 export type ThreeModelOptions = {
+  type: 'gltf';
   url: string;
-  type: Exclude<ThreeModelType, 'mesh'>;
   lngLatAlt?: LngLatAltLike;
   scale?: ThreeModelScale;
   rotation?: ThreeModelRotation;
 } | {
+  type: 'fbx';
+  url: string;
+  lngLatAlt?: LngLatAltLike;
+  scale?: ThreeModelScale;
+  rotation?: ThreeModelRotation;
+} | {
+  type: 'custom';
+  object: Object3D<Event>;
+  lngLatAlt?: LngLatAltLike;
+  scale?: ThreeModelScale;
+  rotation?: ThreeModelRotation;
+} | {
+  // ! This will not be supported in the future.
+  type: 'mesh';
   mesh: Mesh;
-  type: Extract<ThreeModelType, 'mesh'>;
   lngLatAlt?: LngLatAltLike;
   scale?: ThreeModelScale;
   rotation?: ThreeModelRotation;
@@ -71,11 +75,11 @@ export class ThreeModel {
    */
   _id: number;
   /**
-   * Type of the 3D model: 'mesh', 'gltf', or 'fbx'.
-   * @type {ThreeModelType}
+   * Type of the 3D model: 'gltf', 'fbx', 'custom', or 'cloned'.
+   * @type {ThreeModelOptions['type']}
    * @private
    */
-  _type: ThreeModelType;
+  _type: ThreeModelOptions['type'] | 'cloned';
   /**
    * Geographical position of the object in longitude, latitude, and altitude.
    * @type {LngLatAlt|undefined}
@@ -104,10 +108,10 @@ export class ThreeModel {
   }
   /**
    * Root Three.js Group containing the object and its children.
-   * @type {Group}
+   * @type {Object3D<Event>}
    * @private
    */
-  _object: Group;
+  _object: Object3D<Event>;
   /**
    * Reference to the ThreeLayer this object is added to.
    * @type {ThreeLayer|undefined}
@@ -120,6 +124,12 @@ export class ThreeModel {
    * @private
    */
   _popup?: Popup;
+  /**
+   * Promise resolved when the model is fully loaded.
+   * @type {Promise<this>}
+   * @private
+   */
+  _ready: Promise<this>;
 
 
   /**
@@ -154,17 +164,7 @@ export class ThreeModel {
       this._rotation.z
     );
 
-    switch (options.type) {
-      case 'mesh':
-        this._loadMesh(options.mesh);
-        break;
-      case 'gltf':
-        this._loadGLTF(options.url);
-        break;
-      case 'fbx':
-        this._loadFBX(options.url);
-        break;
-    }
+    this._ready = this._init(options);
   }
 
 
@@ -259,6 +259,31 @@ export class ThreeModel {
 
 
   /**
+   * Returns a new ThreeModel with a cloned object attached asynchronously.
+   * @returns {ThreeModel}
+   */
+  clone(): ThreeModel {
+    const model = new ThreeModel({
+      type: 'custom',
+      // @ts-ignore
+      object: null,
+      lngLatAlt: this._lngLatAlt,
+      rotation: this._rotation,
+      scale: this._scale,
+    });
+
+    model._type = 'cloned';
+
+    this._ready.then(() => {
+      const object = this._object.children[0].clone();
+      model._loadObject(object);
+    });
+
+    return model;
+  }
+
+
+  /**
    * Returns the popup attached to the model, if any.
    * @returns {Popup|null}
    */
@@ -333,7 +358,7 @@ export class ThreeModel {
       this._layer.off('click', this._modelOnClick);
       this._layer.fire('removeobject', {
         type: 'removeobject',
-        lngLatAlt: LngLatAlt.convert(this._lngLatAlt!),
+        lngLatAlt: this._lngLatAlt && LngLatAlt.convert(this._lngLatAlt),
         target: this,
       });
       this._layer = undefined;
@@ -344,20 +369,42 @@ export class ThreeModel {
 
 
   /**
-   * Internal method to load a mesh object into the group.
-   * @param {Mesh} mesh
+   * Loads the model content based on the given type.
+   * @param {ThreeModelOptions} options
+   * @returns {Promise<this>}
+   * @private
+   */
+  async _init(options: ThreeModelOptions): Promise<this> {
+    switch (options.type) {
+      case 'gltf':
+        await this._loadGLTF(options.url);
+        break;
+      case 'fbx':
+        await this._loadFBX(options.url);
+        break;
+      case 'custom':
+        options.object && this._loadObject(options.object);
+        break;
+      // ! This will not be supported in the future.
+      case 'mesh':
+        console.warn(`Type 'mesh' will not be supported in the future. Please use 'custom' instead.`);
+        this._loadObject(options.mesh);
+        break;
+    }
+    return this;
+  }
+
+
+  /**
+   * Internal method to load a object into the group.
+   * @param {Object3D<Event>} object
    * @returns {void}
    * @private
    */
-  _loadMesh(mesh: Mesh): void {
-    this._object.add(mesh);
+  _loadObject(object: Object3D<Event>): void {
+    this._object.add(object);
     this._repaint();
-
-    this._layer?.fire('addobject', {
-      type: 'addobject',
-      lngLatAlt: LngLatAlt.convert(this._lngLatAlt!),
-      target: this,
-    });
+    this._onAddObject();
   }
 
 
@@ -376,12 +423,7 @@ export class ThreeModel {
     const gltf = await gltfLoader.loadAsync(url);
     this._object.add(gltf.scene);
     this._repaint();
-
-    this._layer?.fire('addobject', {
-      type: 'addobject',
-      lngLatAlt: LngLatAlt.convert(this._lngLatAlt!),
-      target: this,
-    });
+    this._onAddObject();
   }
 
 
@@ -400,10 +442,19 @@ export class ThreeModel {
     const fbx = await fbxLoader.loadAsync(url);
     this._object.add(fbx);
     this._repaint();
+    this._onAddObject();
+  }
 
+
+  /**
+   * Fires an `addobject` event when the model is added to a layer.
+   * @returns {void}
+   * @private
+   */
+  _onAddObject(): void {
     this._layer?.fire('addobject', {
       type: 'addobject',
-      lngLatAlt: LngLatAlt.convert(this._lngLatAlt!),
+      lngLatAlt: this._lngLatAlt && LngLatAlt.convert(this._lngLatAlt),
       target: this,
     });
   }
