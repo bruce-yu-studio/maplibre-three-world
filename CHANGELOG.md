@@ -1,6 +1,18 @@
 # Maplibre Three World Changelog
 
 
+## [1.2.0] - 2026-02-11
+
+### Added
+- Added `clone()` method for `ThreeModel` to allow duplication of models with the same properties and geometry.
+
+### Optimization
+- Optimized the `Three.Object3D` visibility update.
+
+### Changed
+- Replaced `mesh` type with `custom` type for `ThreeModel` to allow more flexible 3D object types.
+
+
 ## [1.1.2] - 2026-01-10
 
 ### Fixed
