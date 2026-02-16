@@ -1,5 +1,6 @@
 import type { Map, LngLat, LngLatBounds } from 'maplibre-gl';
 import type { ThreeModel } from '../objects/ThreeModel';
+import type { ThreeLine } from '../objects/ThreeLine';
 import { ThreeLight } from '../lights/ThreeLight';
 import { LngLatAlt } from '../geometries/LngLatAlt';
 import { Scene, Group, Raycaster, Vector2 } from 'three';
@@ -11,7 +12,7 @@ import { WORLD_SIZE } from '../configs';
 /**
  * Alias for a Three.js object managed by ThreeLayer.
  */
-export type ThreeObject = ThreeModel;
+export type ThreeObject = ThreeModel | ThreeLine;
 
 
 /**
@@ -405,12 +406,12 @@ export class ThreeLayer {
    * @private
    */
   _updateObjectVisibility = (object: ThreeObject, bounds: LngLatBounds, zoom: number): void => {
-    const { lng, lat } = object._lngLatAlt!;
+    // const { lng, lat } = object._lngLatAlt!;
 
-    const inBounds = this._renderOutsideBounds || bounds.contains([lng, lat]);
-    const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
+    // const inBounds = this._renderOutsideBounds || bounds.contains([lng, lat]);
+    // const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
 
-    object._object.visible = inBounds && inZoomRange;
+    // object._object.visible = inBounds && inZoomRange;
   }
 
 
@@ -447,7 +448,7 @@ export class ThreeLayer {
     if (threeObject) {
       this.fire('click', {
         type: 'click',
-        lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
+        // lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
         point: event.point,
         target: threeObject,
       });
@@ -470,7 +471,7 @@ export class ThreeLayer {
     if (threeObject && threeObject !== this._prevMouseEventThreeObject) {
       this.fire('mouseenter', {
         type: 'mouseenter',
-        lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
+        // lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
         point: event.point,
         target: threeObject,
       });
@@ -479,7 +480,7 @@ export class ThreeLayer {
     if (threeObject) {
       this.fire('mouseover', {
         type: 'mouseover',
-        lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
+        // lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
         point: event.point,
         target: threeObject,
       });
@@ -488,7 +489,7 @@ export class ThreeLayer {
     if (this._prevMouseEventThreeObject && threeObject !== this._prevMouseEventThreeObject) {
       this.fire('mouseleave', {
         type: 'mouseleave',
-        lngLatAlt: LngLatAlt.convert(this._prevMouseEventThreeObject._lngLatAlt!),
+        // lngLatAlt: LngLatAlt.convert(this._prevMouseEventThreeObject._lngLatAlt!),
         point: event.point,
         target: this._prevMouseEventThreeObject,
       });

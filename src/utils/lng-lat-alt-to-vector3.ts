@@ -14,7 +14,7 @@ import { projectedUnitsPerMeter } from './projected-units-per-meter';
  * @param {number} alt - Altitude in meters.
  * @returns {Vector3} Projected 3D position.
  */
-export function lngLatToVector3(lng: number, lat: number, alt: number): Vector3 {
+export function lngLatAltToVector3(lng: number, lat: number, alt: number): Vector3 {
   const x = -EARTH_RADIUS * DEG_TO_RAD * lng * PROJECTION_WORLD_SIZE;
 
   const y = -EARTH_RADIUS *

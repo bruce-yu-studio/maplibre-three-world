@@ -5,7 +5,7 @@ import type { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import type { ThreeLayer, ThreeEventArgs } from '../layers/ThreeLayer';
 import { Group } from 'three';
 import { LngLatAlt, LngLatAltLike } from '../geometries/LngLatAlt';
-import { lngLatToVector3, projectedUnitsPerMeter } from '../utils';
+import { lngLatAltToVector3, projectedUnitsPerMeter } from '../utils';
 import { DEG_TO_RAD } from '../configs';
 
 
@@ -190,7 +190,7 @@ export class ThreeModel {
       this._scale.z
     );
     this._object.position.copy(
-      lngLatToVector3(
+      lngLatAltToVector3(
         this._lngLatAlt.lng,
         this._lngLatAlt.lat,
         this._lngLatAlt.alt
