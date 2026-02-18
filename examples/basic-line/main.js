@@ -27,13 +27,15 @@ const layer = new ThreeLayer({
 
 // Create Line
 const line = new ThreeLine({
-  coordinates: [
+  lngLatAlts: [
     [148.9811, -35.39847, 100],
     [148.9815, -35.39847, 200],
     [148.9819, -35.39847, 50],
     [148.9823, -35.39847, 200],
     [148.9827, -35.39847, 100],
   ],
+  width: .01,
+  color: 'red',
 });
 
 
@@ -47,3 +49,22 @@ map.addLayer(layer);
 
 // Add Line
 line.addTo(layer);
+
+
+layer.on('mouseenter', e => {
+  if (e.target === line) {
+    // line.setLngLatAlts([
+    //   [148.9811, -35.39847, 50],
+    //   [148.9827, -35.39847, 50],
+    // ]);
+    // line.setWidth(.05);
+    line.setColor('green');
+  }
+});
+
+
+layer.on('mouseleave', e => {
+  if (e.target === line) {
+    line.setColor('red');
+  }
+});

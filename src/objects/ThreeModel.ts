@@ -68,6 +68,7 @@ let fbxLoader: FBXLoader;
 
 
 export class ThreeModel {
+  _name: 'ThreeModel' = 'ThreeModel';
   /**
    * Unique identifier of this Three.js object.
    * @type {number}
@@ -150,7 +151,6 @@ export class ThreeModel {
     this._rotation.z = options.rotation?.z || 0;
 
     this._object = new Group();
-    this._object.name = 'ThreeModel';
 
     this._id = this._object.id;
 
@@ -170,10 +170,10 @@ export class ThreeModel {
 
   /**
    * Returns the current position of the object.
-   * @returns {LngLatAlt|undefined}
+   * @returns {LngLatAlt|null}
    */
-  getLngLatAlt(): LngLatAlt | undefined {
-    return this._lngLatAlt;
+  getLngLatAlt(): LngLatAlt | null {
+    return this._lngLatAlt || null;
   }
 
 
@@ -358,7 +358,7 @@ export class ThreeModel {
       this._layer.off('click', this._modelOnClick);
       this._layer.fire('removeobject', {
         type: 'removeobject',
-        lngLatAlt: this._lngLatAlt && LngLatAlt.convert(this._lngLatAlt),
+        lngLatAlt: this._lngLatAlt,
         target: this,
       });
       this._layer = undefined;
@@ -454,7 +454,7 @@ export class ThreeModel {
   _onAddObject(): void {
     this._layer?.fire('addobject', {
       type: 'addobject',
-      lngLatAlt: this._lngLatAlt && LngLatAlt.convert(this._lngLatAlt),
+      lngLatAlt: this._lngLatAlt,
       target: this,
     });
   }
