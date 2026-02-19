@@ -408,6 +408,16 @@ export class ThreeLayer {
 
 
   /**
+   * Triggers a repaint of the ThreeLayer map canvas.
+   * @returns {void}
+   * @private
+   */
+  _repaint(): void {
+    this._map?.triggerRepaint();
+  }
+
+
+  /**
    * Updates visibility of a ThreeObject based on map bounds and zoom level.
    * @param {ThreeObject} object
    * @returns {void}

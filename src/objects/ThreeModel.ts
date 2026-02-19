@@ -196,7 +196,7 @@ export class ThreeModel {
         this._lngLatAlt.alt
       )
     );
-    this._repaint();
+    this._layer?._repaint();
     return this;
   }
 
@@ -226,7 +226,7 @@ export class ThreeModel {
         z * latScale
       );
     }
-    this._repaint();
+    this._layer?._repaint();
     return this;
   }
 
@@ -253,7 +253,7 @@ export class ThreeModel {
       y * DEG_TO_RAD,
       z * DEG_TO_RAD
     );
-    this._repaint();
+    this._layer?._repaint();
     return this;
   }
 
@@ -343,7 +343,7 @@ export class ThreeModel {
     this._layer = threeLayer;
     this._layer._addObject(this);
     this._layer.on('click', this._modelOnClick);
-    this._repaint();
+    this._layer?._repaint();
     return this;
   }
 
@@ -361,9 +361,9 @@ export class ThreeModel {
         lngLatAlt: this._lngLatAlt,
         target: this,
       });
+      this._layer._repaint();
       this._layer = undefined;
     }
-    this._repaint();
     return this;
   }
 
@@ -403,7 +403,7 @@ export class ThreeModel {
    */
   _loadObject(object: Object3D<Event>): void {
     this._object.add(object);
-    this._repaint();
+    this._layer?._repaint();
     this._onAddObject();
   }
 
@@ -422,7 +422,7 @@ export class ThreeModel {
 
     const gltf = await gltfLoader.loadAsync(url);
     this._object.add(gltf.scene);
-    this._repaint();
+    this._layer?._repaint();
     this._onAddObject();
   }
 
@@ -441,7 +441,7 @@ export class ThreeModel {
 
     const fbx = await fbxLoader.loadAsync(url);
     this._object.add(fbx);
-    this._repaint();
+    this._layer?._repaint();
     this._onAddObject();
   }
 
@@ -470,16 +470,6 @@ export class ThreeModel {
     if (event.target === this) {
       this.togglePopup();
     }
-  }
-
-
-  /**
-   * Triggers a repaint of the ThreeLayer map canvas.
-   * @returns {void}
-   * @private
-   */
-  _repaint(): void {
-    this._layer?._map?.triggerRepaint();
   }
 
 

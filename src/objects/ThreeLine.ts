@@ -55,6 +55,7 @@ export class ThreeLine {
   setLngLatAlts(lngLatAlts: Array<LngLatAltLike>): this {
     if (this._line) {
       this._object.remove(this._line);
+      this._line.remove();
     }
 
     // TODO: Too mush loops
@@ -82,7 +83,7 @@ export class ThreeLine {
 
     this._object.position.copy(normalize.position);
     this._object.add(this._line);
-    this._repaint();
+    this._layer?._repaint();
 
     return this;
   }
@@ -96,7 +97,7 @@ export class ThreeLine {
   setWidth(width: number): this {
     if (this._line) {
       this._line.material.linewidth = width;
-      this._repaint();
+    this._layer?._repaint();
     }
     return this;
   }
@@ -109,7 +110,7 @@ export class ThreeLine {
 
   setColor(color: ColorRepresentation): this {
     this._line?.material.color.set(color);
-    this._repaint();
+    this._layer?._repaint();
     return this;
   }
 
@@ -136,14 +137,10 @@ export class ThreeLine {
         lngLatAlts: this._lngLatAlts,
         target: this,
       });
+      this._layer._repaint();
       this._layer = undefined;
     }
     return this;
-  }
-
-
-  _repaint(): void {
-    this._layer?._map?.triggerRepaint();
   }
 
 
