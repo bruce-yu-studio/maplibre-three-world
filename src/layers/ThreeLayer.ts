@@ -430,6 +430,8 @@ export class ThreeLayer {
       const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
       object._object.visible = inBounds && inZoomRange;
     } else if (object._name === 'ThreeLine' && object._lngLatAlts) {
+      const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
+      object._object.visible = inZoomRange;
     }
   }
 

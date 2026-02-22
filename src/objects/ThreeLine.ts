@@ -1,12 +1,12 @@
 import type { ColorRepresentation } from 'three';
 import type { ThreeLayer } from '../layers/ThreeLayer';
-import { Object3D, Event } from 'three';
+import { Vector3, Object3D, Event } from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import { Group } from 'three';
+import { Group, BufferGeometry, BufferAttribute } from 'three';
 import { LngLatAlt, LngLatAltLike } from '../geometries/LngLatAlt';
-import { lngLatAltToVector3, normalizeVertices } from '../utils';
+import { lngLatAltToVector3 } from '../utils';
 
 
 export type ThreeLineType = 'solid' | 'dash';
@@ -54,20 +54,47 @@ export class ThreeLine {
 
   setLngLatAlts(lngLatAlts: Array<LngLatAltLike>): this {
     if (this._line) {
+      this._lngLatAlts = [];
       this._object.remove(this._line);
       this._line.remove();
     }
 
-    // TODO: Too mush loops
-    this._lngLatAlts = lngLatAlts.map(LngLatAlt.convert);
+    const bufferGeometry = new BufferGeometry();
 
-    const coordinates = this._lngLatAlts.map(lngLatAlt => {
-      const { lng, lat, alt } = lngLatAlt;
-      return lngLatAltToVector3(lng, lat, alt);
+    const {
+      vertices,
+      flattenedPositions,
+    } = lngLatAlts.reduce<{
+      vertices: Array<Vector3>,
+      flattenedPositions: Array<number>,
+    }>((prev, lngLatAlt) => {
+      const convertLnglatAlt = LngLatAlt.convert(lngLatAlt);
+      this._lngLatAlts.push(convertLnglatAlt);
+
+      const { lng, lat, alt } = convertLnglatAlt;
+      const vector = lngLatAltToVector3(lng, lat, alt);
+      const { x, y, z } = vector;
+
+      prev.vertices.push(vector);
+      prev.flattenedPositions.push(x, y, z);
+      return prev;
+    }, {
+      vertices: [],
+      flattenedPositions: [],
     });
 
-    const normalize = normalizeVertices(coordinates)!;
-    const flattenedArray = normalize.vertices.flatMap(({x, y, z}) => {
+    bufferGeometry.setAttribute(
+      'position',
+      new BufferAttribute(new Float32Array(flattenedPositions), 3)
+    );
+    bufferGeometry.computeBoundingSphere();
+
+    if (!bufferGeometry.boundingSphere) return this;
+
+    const { center } = bufferGeometry.boundingSphere;
+
+    const flattenedVertices = vertices.flatMap(vector => {
+      const { x, y, z } = vector.sub(center);
       return [x, y, z];
     });
 
@@ -75,13 +102,13 @@ export class ThreeLine {
     const material = new LineMaterial();
 
     this._line = new Line2(geometry, material);
-    this._line.geometry.setPositions(flattenedArray);
+    this._line.geometry.setPositions(flattenedVertices);
     this._line.computeLineDistances();
 
     this.setWidth(this._width);
     this.setColor(this._color);
 
-    this._object.position.copy(normalize.position);
+    this._object.position.copy(center);
     this._object.add(this._line);
     this._layer?._repaint();
 
@@ -97,7 +124,7 @@ export class ThreeLine {
   setWidth(width: number): this {
     if (this._line) {
       this._line.material.linewidth = width;
-    this._layer?._repaint();
+      this._layer?._repaint();
     }
     return this;
   }
