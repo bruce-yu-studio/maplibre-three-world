@@ -17,6 +17,9 @@ export interface ThreeLineOptions {
   type?: ThreeLineType;
   width?: number;
   color?: ColorRepresentation;
+  gapSize?: number;
+  dashSize?: number;
+  dashOffset?: number;
 }
 
 
@@ -27,23 +30,34 @@ export class ThreeLine {
   _type: ThreeLineType;
   _width: number;
   _color: ColorRepresentation;
+  _gapSize: number;
+  _dashSize: number;
+  _dashOffset: number;
   _object: Object3D<Event>;
   _line?: Line2;
   _layer?: ThreeLayer;
 
 
   constructor(options: ThreeLineOptions) {
+    // TODO: Move attributes to the prototype for handling
     this._lngLatAlts = options.lngLatAlts;
     this._type = options.type || 'solid';
     this._width = options.width || 1;
     this._color = options.color || 0x000000;
+    this._gapSize = options.gapSize || 0;
+    this._dashSize = options.dashSize || 0;
+    this._dashOffset = options.dashOffset || 0;
 
     this._object = new Group();
     this._id = this._object.id;
 
     this.setLngLatAlts(this._lngLatAlts);
+    this.setType(this._type);
     this.setWidth(this._width);
     this.setColor(this._color);
+    this.setDashSize(this._gapSize);
+    this.setGapSize(this._dashSize);
+    this.setDashOffset(this._dashOffset);
   }
 
 
@@ -87,6 +101,7 @@ export class ThreeLine {
       'position',
       new BufferAttribute(new Float32Array(flattenedPositions), 3)
     );
+    // TODO: Compute bbox in loops
     bufferGeometry.computeBoundingSphere();
 
     if (!bufferGeometry.boundingSphere) return this;
@@ -116,12 +131,30 @@ export class ThreeLine {
   }
 
 
+  getType(): ThreeLineType {
+    return this._type;
+  }
+
+
+  setType(type: ThreeLineType): this {
+    if (!this._line) return this;
+    this._type = type;
+    if (this._type === 'solid') {
+      this._line.material.defines = {};
+    } else if (this._type === 'dash') {
+      this._line.material.defines.USE_DASH = '';
+    }
+    return this;
+  }
+
+
   getWidth(): number {
     return this._width;
   }
 
 
   setWidth(width: number): this {
+    this._width = width;
     if (this._line) {
       this._line.material.linewidth = width;
       this._layer?._repaint();
@@ -136,8 +169,51 @@ export class ThreeLine {
 
 
   setColor(color: ColorRepresentation): this {
+    this._color = color;
     this._line?.material.color.set(color);
     this._layer?._repaint();
+    return this;
+  }
+
+
+  getDashSize(): number | null {
+    return this._line?.material.dashSize || null;
+  }
+
+
+  setDashSize(dashSize: number): this {
+    this._dashSize = dashSize;
+    if (this._line) {
+      this._line.material.dashSize = dashSize;
+    }
+    return this;
+  }
+
+
+  getGapSize(): number | null {
+    return this._line?.material.gapSize || null;
+  }
+
+
+  setGapSize(gapSize: number): this {
+    this._gapSize = gapSize;
+    if (this._line) {
+      this._line.material.gapSize = gapSize;
+    }
+    return this;
+  }
+
+
+  getDashOffset(): number | null {
+    return this._line?.material.dashOffset || null;
+  }
+
+
+  setDashOffset(dashOffset: number): this {
+    this._dashOffset = dashOffset;
+    if (this._line) {
+      this._line.material.dashOffset = dashOffset;
+    }
     return this;
   }
 

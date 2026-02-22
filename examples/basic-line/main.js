@@ -35,6 +35,9 @@ const line = new ThreeLine({
     [148.9827, -35.39847, 100],
   ],
   width: .01,
+  type: 'dash',
+  dashSize: .1,
+  gapSize: .1,
   color: 'red',
 });
 
@@ -58,13 +61,17 @@ layer.on('mouseenter', e => {
     //   [148.9827, -35.39847, 50],
     // ]);
     // line.setWidth(.05);
-    line.setColor('green');
+    line
+      .setColor('green')
+      .setDashOffset(0);
   }
 });
 
 
 layer.on('mouseleave', e => {
   if (e.target === line) {
-    line.setColor('red');
+    line
+      .setColor('red')
+      .setDashOffset(0.1);
   }
 });
