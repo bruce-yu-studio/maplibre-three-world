@@ -141,17 +141,14 @@ export class ThreeModel {
    */
   constructor(options: ThreeModelOptions) {
     this._type = options.type;
-
     this._scale.x = options.scale?.x || 1;
     this._scale.y = options.scale?.y || 1;
     this._scale.z = options.scale?.z || 1;
-
     this._rotation.x = options.rotation?.x || 0;
     this._rotation.y = options.rotation?.y || 0;
     this._rotation.z = options.rotation?.z || 0;
 
     this._object = new Group();
-
     this._id = this._object.id;
 
     if (options.lngLatAlt) {
@@ -218,6 +215,7 @@ export class ThreeModel {
    * @returns {this}
    */
   setScale(x: number, y: number, z: number): this {
+    this._scale = { x, y, z };
     if (this._lngLatAlt) {
       const latScale = projectedUnitsPerMeter(this._lngLatAlt.lat);
       this._object.scale.set(
@@ -248,6 +246,7 @@ export class ThreeModel {
    * @returns {this}
    */
   setRotation(x: number, y: number, z: number): this {
+    this._rotation = { x, y, z };
     this._object.rotation.set(
       x * DEG_TO_RAD,
       y * DEG_TO_RAD,
@@ -302,11 +301,9 @@ export class ThreeModel {
       this._popup.remove();
       this._popup = undefined;
     }
-
     if (popup) {
       this._popup = popup;
     }
-
     return this;
   }
 
