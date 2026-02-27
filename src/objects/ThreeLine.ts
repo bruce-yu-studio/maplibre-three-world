@@ -127,8 +127,6 @@ export class ThreeLine {
     this._object.add(this._line);
     this._layer?._repaint();
 
-    console.log(this._line)
-
     return this;
   }
 
