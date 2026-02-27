@@ -28,16 +28,17 @@ const layer = new ThreeLayer({
 // Create Line
 const line = new ThreeLine({
   lngLatAlts: [
-    [148.9811, -35.39847, 100],
-    [148.9815, -35.39847, 200],
-    [148.9819, -35.39847, 50],
-    [148.9823, -35.39847, 200],
+    [148.9811, -35.39847, 0],
+    // [148.9815, -35.39847, 200],
+    // [148.9819, -35.39847, 50],
+    // [148.9823, -35.39847, 200],
+    [148.9827, -35.39847, 0],
     [148.9827, -35.39847, 100],
   ],
-  width: .01,
+  width: 10,
   type: 'dash',
-  dashSize: .1,
-  gapSize: .1,
+  dashSize: 1,
+  gapSize: 1,
   color: 'red',
 });
 
@@ -63,7 +64,7 @@ layer.on('mouseenter', e => {
     // line.setWidth(.05);
     line
       .setColor('green')
-      .setDashOffset(0);
+      .setDashOffset(1);
   }
 });
 
@@ -72,6 +73,6 @@ layer.on('mouseleave', e => {
   if (e.target === line) {
     line
       .setColor('red')
-      .setDashOffset(0.1);
+      .setDashOffset(0);
   }
 });

@@ -1,6 +1,6 @@
 import type { ColorRepresentation } from 'three';
 import type { ThreeLayer } from '../layers/ThreeLayer';
-import { Vector3, Object3D, Event } from 'three';
+import { Vector3, Object3D, Event, Vector2 } from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
@@ -127,6 +127,8 @@ export class ThreeLine {
     this._object.add(this._line);
     this._layer?._repaint();
 
+    console.log(this._line)
+
     return this;
   }
 
@@ -222,7 +224,12 @@ export class ThreeLine {
     this._layer = threeLayer;
     this._layer._addObject(this);
 
-    this._layer?.fire('addobject', {
+    if (this._line && this._layer._threeRenderer) {
+      const { width, height } = this._layer._threeRenderer._renderer.domElement;
+      this._line.material.resolution.set(width, height);
+    }
+
+    this._layer.fire('addobject', {
       type: 'addobject',
       lngLatAlts: this._lngLatAlts,
       target: this,
