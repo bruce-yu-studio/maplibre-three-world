@@ -135,7 +135,7 @@ export class ThreeLine {
     this._object.position.copy(center);
     this._object.add(this._line);
     this._layer?._repaint();
-    this._resetResolution();
+    this._updateResolution();
 
     return this;
   }
@@ -250,14 +250,12 @@ export class ThreeLine {
   addTo(threeLayer: ThreeLayer): this {
     this._layer = threeLayer;
     this._layer._addObject(this);
-    this._resetResolution();
-
+    this._updateResolution();
     this._layer.fire('addobject', {
       type: 'addobject',
       lngLatAlts: this._lngLatAlts,
       target: this,
     });
-
     return this;
   }
 
@@ -277,7 +275,7 @@ export class ThreeLine {
   }
 
 
-  _resetResolution(): void {
+  _updateResolution(): void {
     if (this._line && this._layer?._threeRenderer) {
       const { width, height } = this._layer._threeRenderer._renderer.domElement;
       this._line.material.resolution.set(width, height);

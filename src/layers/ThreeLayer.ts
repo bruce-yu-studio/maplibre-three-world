@@ -243,6 +243,13 @@ export class ThreeLayer {
     this._map.on('move', this._mapOnMove);
     this._map.on('click', this._mapOnClick);
     this._map.on('mousemove', this._mapOnMouseMove);
+
+    // TODO: Refactor to only update lines instead of all objects
+    Object.values(this._objects).forEach(object => {
+      if (object._name === 'ThreeLine') {
+        object._updateResolution();
+      }
+    });
   }
 
 
