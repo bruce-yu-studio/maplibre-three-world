@@ -1,6 +1,6 @@
 import type { ColorRepresentation } from 'three';
 import type { ThreeLayer } from '../layers/ThreeLayer';
-import { Vector3, Object3D, Event, Vector2 } from 'three';
+import { Vector3, Object3D, Event } from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
@@ -17,6 +17,7 @@ export interface ThreeLineOptions {
   type?: ThreeLineType;
   width?: number;
   color?: ColorRepresentation;
+  opacity?: number;
   gapSize?: number;
   dashSize?: number;
   dashOffset?: number;
@@ -30,6 +31,7 @@ export class ThreeLine {
   _type: ThreeLineType;
   _width: number;
   _color: ColorRepresentation;
+  _opacity: number;
   _gapSize: number;
   _dashSize: number;
   _dashOffset: number;
@@ -44,8 +46,9 @@ export class ThreeLine {
     this._type = options.type || 'solid';
     this._width = options.width || 1;
     this._color = options.color || 0x000000;
-    this._gapSize = options.gapSize || 0;
-    this._dashSize = options.dashSize || 0;
+    this._opacity = options.opacity || 1;
+    this._gapSize = options.gapSize || 1;
+    this._dashSize = options.dashSize || 1;
     this._dashOffset = options.dashOffset || 0;
 
     this._object = new Group();
@@ -55,8 +58,9 @@ export class ThreeLine {
     this.setType(this._type);
     this.setWidth(this._width);
     this.setColor(this._color);
-    this.setDashSize(this._gapSize);
-    this.setGapSize(this._dashSize);
+    this.setOpacity(this._opacity);
+    this.setDashSize(this._dashSize);
+    this.setGapSize(this._gapSize);
     this.setDashOffset(this._dashOffset);
   }
 
@@ -120,12 +124,18 @@ export class ThreeLine {
     this._line.geometry.setPositions(flattenedVertices);
     this._line.computeLineDistances();
 
+    this.setType(this._type);
     this.setWidth(this._width);
     this.setColor(this._color);
+    this.setOpacity(this._opacity);
+    this.setDashSize(this._dashSize);
+    this.setGapSize(this._gapSize);
+    this.setDashOffset(this._dashOffset);
 
     this._object.position.copy(center);
     this._object.add(this._line);
     this._layer?._repaint();
+    this._resetResolution();
 
     return this;
   }
@@ -137,13 +147,14 @@ export class ThreeLine {
 
 
   setType(type: ThreeLineType): this {
-    if (!this._line) return this;
     this._type = type;
+    if (!this._line) return this;
     if (this._type === 'solid') {
       this._line.material.defines = {};
     } else if (this._type === 'dash') {
       this._line.material.defines.USE_DASH = '';
     }
+    this._layer?._repaint();
     return this;
   }
 
@@ -157,8 +168,8 @@ export class ThreeLine {
     this._width = width;
     if (this._line) {
       this._line.material.linewidth = width;
-      this._layer?._repaint();
     }
+    this._layer?._repaint();
     return this;
   }
 
@@ -176,8 +187,23 @@ export class ThreeLine {
   }
 
 
-  getDashSize(): number | null {
-    return this._line?.material.dashSize || null;
+  getOpacity(): number {
+    return this._opacity;
+  }
+
+
+  setOpacity(opacity: number): this {
+    this._opacity = opacity;
+    if (this._line) {
+      this._line.material.opacity = opacity;
+    }
+    this._layer?._repaint();
+    return this;
+  }
+
+
+  getDashSize(): number {
+    return this._dashSize;
   }
 
 
@@ -186,12 +212,13 @@ export class ThreeLine {
     if (this._line) {
       this._line.material.dashSize = dashSize;
     }
+    this._layer?._repaint();
     return this;
   }
 
 
-  getGapSize(): number | null {
-    return this._line?.material.gapSize || null;
+  getGapSize(): number {
+    return this._gapSize;
   }
 
 
@@ -200,12 +227,13 @@ export class ThreeLine {
     if (this._line) {
       this._line.material.gapSize = gapSize;
     }
+    this._layer?._repaint();
     return this;
   }
 
 
-  getDashOffset(): number | null {
-    return this._line?.material.dashOffset || null;
+  getDashOffset(): number {
+    return this._dashOffset;
   }
 
 
@@ -214,6 +242,7 @@ export class ThreeLine {
     if (this._line) {
       this._line.material.dashOffset = dashOffset;
     }
+    this._layer?._repaint();
     return this;
   }
 
@@ -221,11 +250,7 @@ export class ThreeLine {
   addTo(threeLayer: ThreeLayer): this {
     this._layer = threeLayer;
     this._layer._addObject(this);
-
-    if (this._line && this._layer._threeRenderer) {
-      const { width, height } = this._layer._threeRenderer._renderer.domElement;
-      this._line.material.resolution.set(width, height);
-    }
+    this._resetResolution();
 
     this._layer.fire('addobject', {
       type: 'addobject',
@@ -249,6 +274,14 @@ export class ThreeLine {
       this._layer = undefined;
     }
     return this;
+  }
+
+
+  _resetResolution(): void {
+    if (this._line && this._layer?._threeRenderer) {
+      const { width, height } = this._layer._threeRenderer._renderer.domElement;
+      this._line.material.resolution.set(width, height);
+    }
   }
 
 
