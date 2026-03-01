@@ -249,6 +249,8 @@ export class ThreeLayer {
         object._resetResolution();
       }
     });
+
+    // TODO: Check ThreeObjects is in the current map bounds and set visibility
   }
 
 
@@ -372,6 +374,11 @@ export class ThreeLayer {
    * @private
    */
   _addObject(threeObject: ThreeObject): void {
+    if ((this.minzoom !== 0 || this.maxzoom !== 24 || !this._renderOutsideBounds) && this._map) {
+      const bounds = this._map.getBounds();
+      const zoom = this._map.getZoom();
+      this._updateObjectVisibility(threeObject, bounds, zoom);
+    }
     this._world.add(threeObject._object);
     this._objects[threeObject._id] = threeObject;
   }
@@ -430,15 +437,28 @@ export class ThreeLayer {
    * @private
    */
   _updateObjectVisibility = (object: ThreeObject, bounds: LngLatBounds, zoom: number): void => {
+    const north = bounds.getNorth();
+    const south = bounds.getSouth();
+    const east = bounds.getEast();
+    const west = bounds.getWest();
+
+    // ThreeModel
     if (object._name === 'ThreeModel' && object._lngLatAlt) {
       const { lng, lat } = object._lngLatAlt;
       const inBounds = this._renderOutsideBounds || bounds.contains([lng, lat]);
       const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
       object._object.visible = inBounds && inZoomRange;
-    } else if (object._name === 'ThreeLine' && object._lngLatAlts) {
-      // TODO: Get line bounds and check if it intersects with map bounds instead of checking each point
+    }
+    // ThreeLine
+    else if (object._name === 'ThreeLine' && object._lngLatAlts) {
+      const inBounds = this._renderOutsideBounds || (
+        object._bounds.north <= north &&
+        object._bounds.south >= south &&
+        object._bounds.east <= east &&
+        object._bounds.west >= west
+      );
       const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
-      object._object.visible = inZoomRange;
+      object._object.visible = inBounds && inZoomRange;
     }
   }
 

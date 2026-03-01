@@ -1,10 +1,9 @@
 import type { ColorRepresentation } from 'three';
 import type { ThreeLayer } from '../layers/ThreeLayer';
-import { Vector3, Object3D, Event } from 'three';
+import { Vector3, Object3D, Event, Group, BufferGeometry, BufferAttribute } from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import { Group, BufferGeometry, BufferAttribute } from 'three';
 import { LngLatAlt, LngLatAltLike } from '../geometries/LngLatAlt';
 import { lngLatAltToVector3 } from '../utils';
 
@@ -38,6 +37,12 @@ export class ThreeLine {
   _object: Object3D<Event>;
   _line?: Line2;
   _layer?: ThreeLayer;
+  _bounds = {
+    north: -Infinity,
+    south: Infinity,
+    east: -Infinity,
+    west: Infinity,
+  }
 
 
   constructor(options: ThreeLineOptions) {
@@ -54,13 +59,6 @@ export class ThreeLine {
     this._id = this._object.id;
 
     this.setLngLatAlts(this._lngLatAlts);
-    this.setType(this._type);
-    this.setWidth(this._width);
-    this.setColor(this._color);
-    this.setOpacity(this._opacity);
-    this.setDashSize(this._dashSize);
-    this.setGapSize(this._gapSize);
-    this.setDashOffset(this._dashOffset);
   }
 
 
@@ -266,6 +264,10 @@ export class ThreeLine {
       maxX,
       maxY,
       maxZ,
+      north,
+      south,
+      east,
+      west,
     } = lngLatAlts.reduce<{
       vertices: Array<Vector3>,
       flattenedPositions: Array<number>,
@@ -275,6 +277,10 @@ export class ThreeLine {
       maxX: number,
       maxY: number,
       maxZ: number,
+      north: number,
+      south: number,
+      east: number,
+      west: number,
     }>((prev, lngLatAlt) => {
       const convertLnglatAlt = LngLatAlt.convert(lngLatAlt);
       this._lngLatAlts.push(convertLnglatAlt);
@@ -294,6 +300,11 @@ export class ThreeLine {
       if (y > prev.maxY) prev.maxY = y;
       if (z > prev.maxZ) prev.maxZ = z;
 
+      prev.north = Math.max(prev.north, lat);
+      prev.south = Math.min(prev.south, lat);
+      prev.east = Math.max(prev.east, lng);
+      prev.west = Math.min(prev.west, lng);
+
       return prev;
     }, {
       vertices: [],
@@ -304,6 +315,10 @@ export class ThreeLine {
       maxX: -Infinity,
       maxY: -Infinity,
       maxZ: -Infinity,
+      north: -Infinity,
+      south: Infinity,
+      east: -Infinity,
+      west: Infinity,
     });
 
     const center = new Vector3(
@@ -311,6 +326,8 @@ export class ThreeLine {
       (minY + maxY) / 2,
       (minZ + maxZ) / 2
     );
+
+    this._bounds = { north, south, east, west };
 
     return {
       vertices,
