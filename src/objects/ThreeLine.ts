@@ -41,7 +41,6 @@ export class ThreeLine {
 
 
   constructor(options: ThreeLineOptions) {
-    // TODO: Move attributes to the prototype for handling
     this._lngLatAlts = options.lngLatAlts;
     this._type = options.type || 'solid';
     this._width = options.width || 1;
@@ -77,40 +76,18 @@ export class ThreeLine {
       this._line.remove();
     }
 
-    const bufferGeometry = new BufferGeometry();
-
     const {
       vertices,
       flattenedPositions,
-    } = lngLatAlts.reduce<{
-      vertices: Array<Vector3>,
-      flattenedPositions: Array<number>,
-    }>((prev, lngLatAlt) => {
-      const convertLnglatAlt = LngLatAlt.convert(lngLatAlt);
-      this._lngLatAlts.push(convertLnglatAlt);
+      center,
+    } = this._createGeometryPayload(lngLatAlts);  
 
-      const { lng, lat, alt } = convertLnglatAlt;
-      const vector = lngLatAltToVector3(lng, lat, alt);
-      const { x, y, z } = vector;
-
-      prev.vertices.push(vector);
-      prev.flattenedPositions.push(x, y, z);
-      return prev;
-    }, {
-      vertices: [],
-      flattenedPositions: [],
-    });
+    const bufferGeometry = new BufferGeometry();
 
     bufferGeometry.setAttribute(
       'position',
       new BufferAttribute(new Float32Array(flattenedPositions), 3)
     );
-    // TODO: Compute bbox in loops
-    bufferGeometry.computeBoundingSphere();
-
-    if (!bufferGeometry.boundingSphere) return this;
-
-    const { center } = bufferGeometry.boundingSphere;
 
     const flattenedVertices = vertices.flatMap(vector => {
       const { x, y, z } = vector.sub(center);
@@ -135,7 +112,7 @@ export class ThreeLine {
     this._object.position.copy(center);
     this._object.add(this._line);
     this._layer?._repaint();
-    this._updateResolution();
+    this._resetResolution();
 
     return this;
   }
@@ -250,7 +227,7 @@ export class ThreeLine {
   addTo(threeLayer: ThreeLayer): this {
     this._layer = threeLayer;
     this._layer._addObject(this);
-    this._updateResolution();
+    this._resetResolution();
     this._layer.fire('addobject', {
       type: 'addobject',
       lngLatAlts: this._lngLatAlts,
@@ -260,7 +237,7 @@ export class ThreeLine {
   }
 
 
-  remove() {
+  remove(): this {
     if (this._layer) {
       this._layer._removeObject(this);
       this._layer.fire('removeobject', {
@@ -275,7 +252,75 @@ export class ThreeLine {
   }
 
 
-  _updateResolution(): void {
+  _createGeometryPayload(lngLatAlts: Array<LngLatAltLike>): {
+    vertices: Array<Vector3>,
+    flattenedPositions: Array<number>,
+    center: Vector3,
+  } {
+    const {
+      vertices,
+      flattenedPositions,
+      minX,
+      minY,
+      minZ,
+      maxX,
+      maxY,
+      maxZ,
+    } = lngLatAlts.reduce<{
+      vertices: Array<Vector3>,
+      flattenedPositions: Array<number>,
+      minX: number,
+      minY: number,
+      minZ: number,
+      maxX: number,
+      maxY: number,
+      maxZ: number,
+    }>((prev, lngLatAlt) => {
+      const convertLnglatAlt = LngLatAlt.convert(lngLatAlt);
+      this._lngLatAlts.push(convertLnglatAlt);
+
+      const { lng, lat, alt } = convertLnglatAlt;
+      const vector = lngLatAltToVector3(lng, lat, alt);
+      const { x, y, z } = vector;
+
+      prev.vertices.push(vector);
+      prev.flattenedPositions.push(x, y, z);
+
+      if (x < prev.minX) prev.minX = x;
+      if (y < prev.minY) prev.minY = y;
+      if (z < prev.minZ) prev.minZ = z;
+
+      if (x > prev.maxX) prev.maxX = x;
+      if (y > prev.maxY) prev.maxY = y;
+      if (z > prev.maxZ) prev.maxZ = z;
+
+      return prev;
+    }, {
+      vertices: [],
+      flattenedPositions: [],
+      minX: Infinity,
+      minY: Infinity,
+      minZ: Infinity,
+      maxX: -Infinity,
+      maxY: -Infinity,
+      maxZ: -Infinity,
+    });
+
+    const center = new Vector3(
+      (minX + maxX) / 2,
+      (minY + maxY) / 2,
+      (minZ + maxZ) / 2
+    );
+
+    return {
+      vertices,
+      flattenedPositions,
+      center,
+    }
+  }
+
+
+  _resetResolution(): void {
     if (this._line && this._layer?._threeRenderer) {
       const { width, height } = this._layer._threeRenderer._renderer.domElement;
       this._line.material.resolution.set(width, height);

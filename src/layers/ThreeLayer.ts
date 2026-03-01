@@ -244,10 +244,9 @@ export class ThreeLayer {
     this._map.on('click', this._mapOnClick);
     this._map.on('mousemove', this._mapOnMouseMove);
 
-    // TODO: Refactor to only update lines instead of all objects
     Object.values(this._objects).forEach(object => {
       if (object._name === 'ThreeLine') {
-        object._updateResolution();
+        object._resetResolution();
       }
     });
   }
@@ -437,6 +436,7 @@ export class ThreeLayer {
       const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
       object._object.visible = inBounds && inZoomRange;
     } else if (object._name === 'ThreeLine' && object._lngLatAlts) {
+      // TODO: Get line bounds and check if it intersects with map bounds instead of checking each point
       const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
       object._object.visible = inZoomRange;
     }
