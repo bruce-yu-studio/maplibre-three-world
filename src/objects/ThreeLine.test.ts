@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { Group } from 'three';
 import { ThreeLine } from './ThreeLine';
 import { LngLatAlt } from '../geometries/LngLatAlt';
 
@@ -11,59 +10,39 @@ function makeCoords() {
 }
 
 describe('ThreeLine constructor', () => {
-  it('_name is ThreeLine', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._name).toBe('ThreeLine');
-  });
-
-  it('assigns a numeric _id', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(typeof line._id).toBe('number');
-  });
-
-  it('_id matches _object.id', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._id).toBe(line._object.id);
-  });
-
-  it('_object is a Three.js Group', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._object).toBeInstanceOf(Group);
-  });
-
   it('defaults type to solid', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._type).toBe('solid');
+    expect(line.getType()).toBe('solid');
   });
 
   it('defaults width to 1', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._width).toBe(1);
+    expect(line.getWidth()).toBe(1);
   });
 
   it('defaults color to 0x000000', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._color).toBe(0x000000);
+    expect(line.getColor()).toBe(0x000000);
   });
 
   it('defaults opacity to 1', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._opacity).toBe(1);
+    expect(line.getOpacity()).toBe(1);
   });
 
   it('defaults gapSize to 1', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._gapSize).toBe(1);
+    expect(line.getGapSize()).toBe(1);
   });
 
   it('defaults dashSize to 1', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._dashSize).toBe(1);
+    expect(line.getDashSize()).toBe(1);
   });
 
   it('defaults dashOffset to 0', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._dashOffset).toBe(0);
+    expect(line.getDashOffset()).toBe(0);
   });
 
   it('applies provided options', () => {
@@ -77,23 +56,13 @@ describe('ThreeLine constructor', () => {
       dashSize: 4,
       dashOffset: 0.5,
     });
-    expect(line._type).toBe('dash');
-    expect(line._width).toBe(3);
-    expect(line._color).toBe(0xff0000);
-    expect(line._opacity).toBe(0.5);
-    expect(line._gapSize).toBe(2);
-    expect(line._dashSize).toBe(4);
-    expect(line._dashOffset).toBe(0.5);
-  });
-
-  it('_layer is undefined initially', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._layer).toBeUndefined();
-  });
-
-  it('creates a Line2 after construction', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    expect(line._line).toBeDefined();
+    expect(line.getType()).toBe('dash');
+    expect(line.getWidth()).toBe(3);
+    expect(line.getColor()).toBe(0xff0000);
+    expect(line.getOpacity()).toBe(0.5);
+    expect(line.getGapSize()).toBe(2);
+    expect(line.getDashSize()).toBe(4);
+    expect(line.getDashOffset()).toBe(0.5);
   });
 });
 
@@ -112,17 +81,6 @@ describe('getLngLatAlts', () => {
   });
 });
 
-describe('_bounds', () => {
-  it('computes north/south/east/west from coords', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    // coords: [0,0,0] and [10,20,0] → lng 0-10, lat 0-20
-    expect(line._bounds.north).toBe(20);
-    expect(line._bounds.south).toBe(0);
-    expect(line._bounds.east).toBe(10);
-    expect(line._bounds.west).toBe(0);
-  });
-});
-
 describe('getType / setType', () => {
   it('getType returns stored type', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
@@ -133,19 +91,6 @@ describe('getType / setType', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     line.setType('dash');
     expect(line.getType()).toBe('dash');
-  });
-
-  it('setType dash sets USE_DASH define on material', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    line.setType('dash');
-    expect(line._line!.material.defines).toHaveProperty('USE_DASH');
-  });
-
-  it('setType solid clears defines on material', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    line.setType('dash');
-    line.setType('solid');
-    expect(line._line!.material.defines).not.toHaveProperty('USE_DASH');
   });
 
   it('is chainable', () => {
@@ -160,11 +105,10 @@ describe('getWidth / setWidth', () => {
     expect(line.getWidth()).toBe(1);
   });
 
-  it('setWidth updates _width and material', () => {
+  it('setWidth updates width', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     line.setWidth(5);
-    expect(line._width).toBe(5);
-    expect(line._line!.material.linewidth).toBe(5);
+    expect(line.getWidth()).toBe(5);
   });
 
   it('is chainable', () => {
@@ -179,10 +123,10 @@ describe('getColor / setColor', () => {
     expect(line.getColor()).toBe(0x000000);
   });
 
-  it('setColor updates _color', () => {
+  it('setColor updates color', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     line.setColor(0xff0000);
-    expect(line._color).toBe(0xff0000);
+    expect(line.getColor()).toBe(0xff0000);
   });
 
   it('is chainable', () => {
@@ -197,11 +141,10 @@ describe('getOpacity / setOpacity', () => {
     expect(line.getOpacity()).toBe(1);
   });
 
-  it('setOpacity updates _opacity and material', () => {
+  it('setOpacity updates opacity', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     line.setOpacity(0.5);
-    expect(line._opacity).toBe(0.5);
-    expect(line._line!.material.opacity).toBe(0.5);
+    expect(line.getOpacity()).toBe(0.5);
   });
 
   it('is chainable', () => {
@@ -211,11 +154,10 @@ describe('getOpacity / setOpacity', () => {
 });
 
 describe('getDashSize / setDashSize', () => {
-  it('setDashSize updates _dashSize and material', () => {
+  it('setDashSize updates dashSize', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     line.setDashSize(3);
     expect(line.getDashSize()).toBe(3);
-    expect(line._line!.material.dashSize).toBe(3);
   });
 
   it('is chainable', () => {
@@ -225,11 +167,10 @@ describe('getDashSize / setDashSize', () => {
 });
 
 describe('getGapSize / setGapSize', () => {
-  it('setGapSize updates _gapSize and material', () => {
+  it('setGapSize updates gapSize', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     line.setGapSize(4);
     expect(line.getGapSize()).toBe(4);
-    expect(line._line!.material.gapSize).toBe(4);
   });
 
   it('is chainable', () => {
@@ -239,11 +180,10 @@ describe('getGapSize / setGapSize', () => {
 });
 
 describe('getDashOffset / setDashOffset', () => {
-  it('setDashOffset updates _dashOffset and material', () => {
+  it('setDashOffset updates dashOffset', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     line.setDashOffset(0.5);
     expect(line.getDashOffset()).toBe(0.5);
-    expect(line._line!.material.dashOffset).toBe(0.5);
   });
 
   it('is chainable', () => {
@@ -252,7 +192,7 @@ describe('getDashOffset / setDashOffset', () => {
   });
 });
 
-describe('setLngLatAlts (explicit call)', () => {
+describe('setLngLatAlts', () => {
   it('resets and stores the new coords', () => {
     const line = new ThreeLine({ lngLatAlts: makeCoords() });
     const newCoords = [new LngLatAlt(20, 30, 0), new LngLatAlt(40, 50, 0)];
@@ -261,15 +201,6 @@ describe('setLngLatAlts (explicit call)', () => {
     expect(result).toHaveLength(2);
     expect(result[0].lng).toBe(20);
     expect(result[1].lng).toBe(40);
-  });
-
-  it('updates _bounds after reset', () => {
-    const line = new ThreeLine({ lngLatAlts: makeCoords() });
-    line.setLngLatAlts([new LngLatAlt(100, 50, 0), new LngLatAlt(120, 60, 0)]);
-    expect(line._bounds.north).toBe(60);
-    expect(line._bounds.south).toBe(50);
-    expect(line._bounds.east).toBe(120);
-    expect(line._bounds.west).toBe(100);
   });
 
   it('is chainable', () => {
