@@ -1,6 +1,22 @@
 # Maplibre Three World Changelog
 
 
+## [1.3.0] - 2026-03-03
+
+### Added
+- Create `ThreeLine` class for rendering 3D lines on the map.
+- Export utility functions.
+
+### Documentation
+- Add documentation for `ThreeLine` class and utility functions.
+- Rewrite example codes.
+
+### Chore
+- Refactor project structure for better organization and maintainability.
+- Add unit tests for this project.
+- Add live-server for development and testing.
+
+
 ## [1.2.0] - 2026-02-11
 
 ### Added
