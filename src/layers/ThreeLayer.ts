@@ -1,5 +1,6 @@
 import type { Map, LngLat, LngLatBounds } from 'maplibre-gl';
 import type { ThreeModel } from '../objects/ThreeModel';
+import type { ThreeLine } from '../objects/ThreeLine';
 import { ThreeLight } from '../lights/ThreeLight';
 import { LngLatAlt } from '../geometries/LngLatAlt';
 import { Scene, Group, Raycaster, Vector2 } from 'three';
@@ -11,7 +12,7 @@ import { WORLD_SIZE } from '../configs';
 /**
  * Alias for a Three.js object managed by ThreeLayer.
  */
-export type ThreeObject = ThreeModel;
+export type ThreeObject = ThreeModel | ThreeLine;
 
 
 /**
@@ -37,10 +38,18 @@ export type ThreeEvents = Record<ThreeEventType, Set<(args: ThreeEventArgs) => v
 /**
  * Event argument structure passed to ThreeLayer event callbacks.
  */
-export interface ThreeEventArgs {
+export type ThreeEventArgs = {
   type: ThreeEventType;
   target: any;
   lngLatAlt?: LngLatAlt;
+  point?: {
+    x: number;
+    y: number;
+  }
+} | {
+  type: ThreeEventType;
+  target: any;
+  lngLatAlts?: Array<LngLatAlt>;
   point?: {
     x: number;
     y: number;
@@ -234,6 +243,14 @@ export class ThreeLayer {
     this._map.on('move', this._mapOnMove);
     this._map.on('click', this._mapOnClick);
     this._map.on('mousemove', this._mapOnMouseMove);
+
+    Object.values(this._objects).forEach(object => {
+      if (object._name === 'ThreeLine') {
+        object._resetResolution();
+      }
+    });
+
+    // TODO: Check ThreeObjects is in the current map bounds and set visibility
   }
 
 
@@ -357,6 +374,11 @@ export class ThreeLayer {
    * @private
    */
   _addObject(threeObject: ThreeObject): void {
+    if ((this.minzoom !== 0 || this.maxzoom !== 24 || !this._renderOutsideBounds) && this._map) {
+      const bounds = this._map.getBounds();
+      const zoom = this._map.getZoom();
+      this._updateObjectVisibility(threeObject, bounds, zoom);
+    }
     this._world.add(threeObject._object);
     this._objects[threeObject._id] = threeObject;
   }
@@ -399,18 +421,45 @@ export class ThreeLayer {
 
 
   /**
+   * Triggers a repaint of the ThreeLayer map canvas.
+   * @returns {void}
+   * @private
+   */
+  _repaint(): void {
+    this._map?.triggerRepaint();
+  }
+
+
+  /**
    * Updates visibility of a ThreeObject based on map bounds and zoom level.
    * @param {ThreeObject} object
    * @returns {void}
    * @private
    */
   _updateObjectVisibility = (object: ThreeObject, bounds: LngLatBounds, zoom: number): void => {
-    const { lng, lat } = object._lngLatAlt!;
+    const north = bounds.getNorth();
+    const south = bounds.getSouth();
+    const east = bounds.getEast();
+    const west = bounds.getWest();
 
-    const inBounds = this._renderOutsideBounds || bounds.contains([lng, lat]);
-    const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
-
-    object._object.visible = inBounds && inZoomRange;
+    // ThreeModel
+    if (object._name === 'ThreeModel' && object._lngLatAlt) {
+      const { lng, lat } = object._lngLatAlt;
+      const inBounds = this._renderOutsideBounds || bounds.contains([lng, lat]);
+      const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
+      object._object.visible = inBounds && inZoomRange;
+    }
+    // ThreeLine
+    else if (object._name === 'ThreeLine' && object._lngLatAlts) {
+      const inBounds = this._renderOutsideBounds || (
+        object._bounds.north <= north &&
+        object._bounds.south >= south &&
+        object._bounds.east <= east &&
+        object._bounds.west >= west
+      );
+      const inZoomRange = this.minzoom <= zoom && zoom <= this.maxzoom;
+      object._object.visible = inBounds && inZoomRange;
+    }
   }
 
 
@@ -444,12 +493,23 @@ export class ThreeLayer {
       event.point.y,
     ]);
 
-    if (threeObject) {
+    if (!threeObject) return;
+
+    const basePayload = {
+      type: 'click',
+      point: event.point,
+      target: threeObject,
+    } as const;
+
+    if (threeObject._name === 'ThreeModel') {
       this.fire('click', {
-        type: 'click',
-        lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
-        point: event.point,
-        target: threeObject,
+        lngLatAlt: threeObject._lngLatAlt,
+        ...basePayload,
+      });
+    } else if (threeObject._name === 'ThreeLine') {
+      this.fire('click', {
+        lngLatAlts: threeObject._lngLatAlts,
+        ...basePayload,
       });
     }
   }
@@ -468,30 +528,56 @@ export class ThreeLayer {
     ]);
 
     if (threeObject && threeObject !== this._prevMouseEventThreeObject) {
-      this.fire('mouseenter', {
-        type: 'mouseenter',
-        lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
-        point: event.point,
-        target: threeObject,
-      });
+      if (threeObject._name === 'ThreeModel') {
+        this.fire('mouseenter', {
+          type: 'mouseenter',
+          lngLatAlt: threeObject._lngLatAlt,
+          point: event.point,
+          target: threeObject,
+        });
+      } else if (threeObject._name === 'ThreeLine') {
+        this.fire('mouseenter', {
+          type: 'mouseenter',
+          point: event.point,
+          target: threeObject,
+        });
+      }
     }
 
     if (threeObject) {
-      this.fire('mouseover', {
-        type: 'mouseover',
-        lngLatAlt: LngLatAlt.convert(threeObject._lngLatAlt!),
-        point: event.point,
-        target: threeObject,
-      });
+      if (threeObject._name === 'ThreeModel') {
+        this.fire('mouseover', {
+          type: 'mouseover',
+          lngLatAlt: threeObject._lngLatAlt,
+          point: event.point,
+          target: threeObject,
+        });
+      } else if (threeObject._name === 'ThreeLine') {
+        this.fire('mouseover', {
+          type: 'mouseover',
+          lngLatAlts: threeObject._lngLatAlts,
+          point: event.point,
+          target: threeObject,
+        });
+      }
     }
 
     if (this._prevMouseEventThreeObject && threeObject !== this._prevMouseEventThreeObject) {
-      this.fire('mouseleave', {
-        type: 'mouseleave',
-        lngLatAlt: LngLatAlt.convert(this._prevMouseEventThreeObject._lngLatAlt!),
-        point: event.point,
-        target: this._prevMouseEventThreeObject,
-      });
+      if (this._prevMouseEventThreeObject._name === 'ThreeModel') {
+        this.fire('mouseleave', {
+          type: 'mouseleave',
+          lngLatAlt: this._prevMouseEventThreeObject._lngLatAlt,
+          point: event.point,
+          target: this._prevMouseEventThreeObject,
+        });
+      } else if (this._prevMouseEventThreeObject._name === 'ThreeLine') {
+        this.fire('mouseleave', {
+          type: 'mouseleave',
+          lngLatAlts: this._prevMouseEventThreeObject._lngLatAlts,
+          point: event.point,
+          target: this._prevMouseEventThreeObject,
+        });
+      }
     }
 
     this._prevMouseEventThreeObject = threeObject;
