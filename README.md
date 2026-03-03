@@ -32,11 +32,11 @@ Using versions outside these ranges may result in unexpected behavior.
 ## Basic Usage
 
 ``` javascript
-import { Map } from 'maplibre-gl';
+import maplibregl from 'maplibre-gl';
 import { ThreeLayer, ThreeModel } from 'maplibre-three-world';
 
 // Initial Map
-const map = new Map({
+const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/bright',
   zoom: 18,
