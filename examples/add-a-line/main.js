@@ -6,7 +6,7 @@ import { ThreeLayer, ThreeLine } from 'maplibre-three-world';
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/bright',
-  zoom: 17,
+  zoom: 18,
   center: [148.9819, -35.3981],
   pitch: 60,
   maxPitch: 85,
@@ -14,7 +14,6 @@ const map = new maplibregl.Map({
     antialias: true,
   },
 });
-
 
 
 // Create Layer
@@ -28,16 +27,14 @@ const layer = new ThreeLayer({
 // Create Line
 const line = new ThreeLine({
   lngLatAlts: [
-    [148.9811, -35.39847, 0],
-    [148.9827, -35.39847, 0],
-    [148.9827, -35.39847, 100],
+    [148.9811, -35.39847, 50],
+    [148.9819, -35.39847, 0],
+    [148.9827, -35.39847, 50],
   ],
-  width: 20,
-  type: 'dash',
+  width: 30,
+  type: 'solid',
   color: 'red',
-  opacity: 0.4,
-  dashSize: .5,
-  gapSize: .25,
+  opacity: 0.5,
 });
 
 
@@ -51,30 +48,3 @@ map.addLayer(layer);
 
 // Add Line
 line.addTo(layer);
-
-
-setTimeout(() => {
-  line.setLngLatAlts([
-    [148.9827, -35.39847, 0],
-    [148.9827, -35.39847, 100],
-    [148.9833, -35.39847, 100],
-  ]);
-}, 2000);
-
-
-layer.on('mouseenter', event => {
-  if (event.target === line) {
-    line
-      .setColor('green')
-      .setDashOffset(1);
-  }
-});
-
-
-layer.on('mouseleave', event => {
-  if (event.target === line) {
-    line
-      .setColor('red')
-      .setDashOffset(0);
-  }
-});
