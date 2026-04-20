@@ -1,3 +1,4 @@
+export * from './animate-waypoints';
 export * from './clamp';
 export * from './haversine-distance';
 export * from './lng-lat-alt-to-vector3';

@@ -5,7 +5,7 @@ import type { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import type { ThreeLayer, ThreeEventArgs } from '../layers/ThreeLayer';
 import { Group } from 'three';
 import { LngLatAlt, LngLatAltLike } from '../geometries/LngLatAlt';
-import { lngLatAltToVector3, projectedUnitsPerMeter, haversineDistance } from '../utils';
+import { lngLatAltToVector3, projectedUnitsPerMeter, computeSegmentThresholds, resolveWaypointSegment } from '../utils';
 import { DEG_TO_RAD } from '../configs';
 
 
@@ -296,8 +296,8 @@ export class ThreeModel {
 
 
   /**
-   * Returns the popup attached to the model, if any.
-   * @returns {Popup|null}
+   * Returns the current rotation of the model in degrees.
+   * @returns {ThreeModelRotation}
    */
   getRotation(): ThreeModelRotation {
     return this._rotation;
@@ -421,19 +421,7 @@ export class ThreeModel {
     this._animateSegmentThresholds = undefined;
     if (target.lngLatAlts && target.lngLatAlts.length > 0 && this._animateFrom.lngLatAlt) {
       const path = [this._animateFrom.lngLatAlt, ...target.lngLatAlts.map(p => LngLatAlt.convert(p))];
-      const distances = path.slice(0, -1).map((from, i) => {
-        const to = path[i + 1];
-        return haversineDistance(from.lng, from.lat, from.alt, to.lng, to.lat, to.alt);
-      });
-      const totalDist = distances.reduce((sum, d) => sum + d, 0);
-      if (totalDist > 0) {
-        let cumulative = 0;
-        this._animateSegmentThresholds = [0];
-        for (const d of distances) {
-          cumulative += d / totalDist;
-          this._animateSegmentThresholds.push(cumulative);
-        }
-      }
+      this._animateSegmentThresholds = computeSegmentThresholds(path);
     }
 
     return new Promise<this>((resolve) => {
@@ -629,17 +617,7 @@ export class ThreeModel {
 
       if (this._animateSegmentThresholds) {
         // Constant-speed: each segment occupies a t-range proportional to its distance.
-        const thresholds = this._animateSegmentThresholds;
-        segmentIndex = segmentCount - 1;
-        for (let i = 0; i < segmentCount; i++) {
-          if (t <= thresholds[i + 1]) {
-            segmentIndex = i;
-            break;
-          }
-        }
-        const segStart = thresholds[segmentIndex];
-        const segEnd = thresholds[segmentIndex + 1];
-        localT = segEnd > segStart ? (t - segStart) / (segEnd - segStart) : 1;
+        ({ segmentIndex, localT } = resolveWaypointSegment(t, this._animateSegmentThresholds, segmentCount));
       } else {
         // Fallback: equal time per segment.
         const segmentT = t * segmentCount;

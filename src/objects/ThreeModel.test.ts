@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Object3D } from 'three';
 import { ThreeModel } from './ThreeModel';
 import { LngLatAlt } from '../geometries/LngLatAlt';
@@ -113,5 +113,131 @@ describe('getPopup / setPopup', () => {
   it('is chainable', () => {
     const model = new ThreeModel({ type: 'custom', object: new Object3D() });
     expect(model.setPopup(null)).toBe(model);
+  });
+});
+
+
+describe('animate / stopAnimate', () => {
+  let rafCallbacks: Map<number, FrameRequestCallback>;
+  let nextRafId: number;
+
+  beforeEach(() => {
+    rafCallbacks = new Map();
+    nextRafId = 0;
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      const id = ++nextRafId;
+      rafCallbacks.set(id, cb);
+      return id;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      rafCallbacks.delete(id);
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function flush(time: number) {
+    const callbacks = [...rafCallbacks.values()];
+    rafCallbacks.clear();
+    callbacks.forEach(cb => cb(time));
+  }
+
+  it('animate() returns a Promise', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    const result = model.animate({ rotation: { x: 90 } }, 1000);
+    expect(result).toBeInstanceOf(Promise);
+    model.stopAnimate();
+  });
+
+  it('stopAnimate() resolves the animate() Promise immediately', async () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    const promise = model.animate({ rotation: { x: 90 } }, 1000);
+    model.stopAnimate();
+    await expect(promise).resolves.toBe(model);
+  });
+
+  it('stopAnimate() is chainable', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.animate({ rotation: { x: 90 } }, 1000);
+    expect(model.stopAnimate()).toBe(model);
+  });
+
+  it('stopAnimate() clears all animation state', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.animate({ rotation: { x: 90 } }, 1000);
+    model.stopAnimate();
+    expect(model._animateTo).toBeUndefined();
+    expect(model._animateFrom).toBeUndefined();
+    expect(model._animateRafId).toBeUndefined();
+    expect(model._animateResolve).toBeUndefined();
+    expect(model._animateSegmentThresholds).toBeUndefined();
+  });
+
+  it('animate() resolves when t reaches 1', async () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    const promise = model.animate({ rotation: { x: 90 } }, 1000);
+    flush(0);     // sets _animateStartTime = 0, t = 0
+    flush(1000);  // t = 1 → resolves
+    await expect(promise).resolves.toBe(model);
+  });
+
+  it('animate() interpolates rotation toward target at t=0.5', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.animate({ rotation: { x: 90 } }, 1000);
+    flush(0);    // _animateStartTime = 0
+    flush(500);  // t = 0.5 → x should be 45
+    expect(model.getRotation().x).toBeCloseTo(45);
+  });
+
+  it('animate() only interpolates specified rotation axes', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.setRotation(10, 20, 30);
+    model.animate({ rotation: { x: 90 } }, 1000);
+    flush(0);
+    flush(1000);  // t = 1
+    expect(model.getRotation().x).toBeCloseTo(90);
+    expect(model.getRotation().y).toBeCloseTo(20);
+    expect(model.getRotation().z).toBeCloseTo(30);
+  });
+
+  it('animate() interpolates scale toward target at t=0.5', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.animate({ scale: { x: 2, y: 2, z: 2 } }, 1000);
+    flush(0);
+    flush(500);  // t = 0.5 → scale.x should be 1.5
+    expect(model.getScale().x).toBeCloseTo(1.5);
+    expect(model.getScale().y).toBeCloseTo(1.5);
+    expect(model.getScale().z).toBeCloseTo(1.5);
+  });
+
+  it('animate() interpolates position along a single waypoint at t=0.5', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.setLngLatAlt([0, 0, 0]);
+    model.animate({ lngLatAlts: [[10, 0, 0]] }, 1000);
+    flush(0);
+    flush(500);  // t = 0.5 → lng should be 5
+    expect(model.getLngLatAlt()!.lng).toBeCloseTo(5);
+  });
+
+  it('animate() reaches the final waypoint at t=1', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.setLngLatAlt([0, 0, 0]);
+    const promise = model.animate({ lngLatAlts: [[10, 0, 0]] }, 1000);
+    flush(0);
+    flush(1000);  // t = 1
+    expect(model.getLngLatAlt()!.lng).toBeCloseTo(10);
+    model.stopAnimate();
+    return promise;
+  });
+
+  it('starting a new animate() while animating resolves the previous Promise', async () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    const first = model.animate({ rotation: { x: 90 } }, 1000);
+    flush(0);
+    model.animate({ rotation: { x: 0 } }, 1000);
+    await expect(first).resolves.toBe(model);
+    model.stopAnimate();
   });
 });
