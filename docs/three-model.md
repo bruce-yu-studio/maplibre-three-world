@@ -176,16 +176,19 @@ Returns a `Promise` that resolves with the model instance when the animation com
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `target.lngLatAlts` | `Array<LngLatAltLike>` | Optional. Ordered list of waypoints. The model travels: current position → waypoint[0] → … → waypoint[N-1]. Speed is kept constant proportional to each segment's geographic distance. |
+| `target.lngLatAlts` | `Array<LngLatAltLike>` | Optional. Ordered list of waypoints where `lngLatAlts[0]` is the start position. The model snaps to `lngLatAlts[0]` immediately, then travels `lngLatAlts[0]` → `lngLatAlts[1]` → … → `lngLatAlts[N-1]`. Speed is kept constant proportional to each segment's geographic distance. |
 | `target.rotation` | `Partial<{ x, y, z }>` | Optional. Target rotation in degrees. Only specified axes are interpolated. |
 | `target.scale` | `Partial<{ x, y, z }>` | Optional. Target scale. Only specified axes are interpolated. |
 | `duration` | `number` | Transition duration in milliseconds. Default is `1000`. |
 
 **Example:**
 ```javascript
-// Move the model to a new position over 2 seconds
+// Move the model from A to B over 2 seconds
 await model.animate({
-  lngLatAlts: [[121.55, 25.05, 0]],
+  lngLatAlts: [
+    [121.50, 25.00, 0],  // start
+    [121.55, 25.05, 0],  // end
+  ],
 }, 2000);
 
 console.log('animation complete');
@@ -193,11 +196,12 @@ console.log('animation complete');
 
 **Example:**
 ```javascript
-// Chain position, rotation, and scale together
+// Travel through multiple waypoints with rotation and scale change
 await model.animate({
   lngLatAlts: [
+    [121.50, 25.00, 0],  // start
     [121.52, 25.03, 0],
-    [121.55, 25.05, 0],
+    [121.55, 25.05, 0],  // end
   ],
   rotation: { z: 180 },
   scale: { x: 2, y: 2, z: 2 },
@@ -207,11 +211,15 @@ await model.animate({
 **Example:**
 ```javascript
 // Start a new animation mid-flight — the previous one resolves immediately
-model.animate({ lngLatAlts: [[121.55, 25.05, 0]] }, 5000);
+model.animate({
+  lngLatAlts: [[121.50, 25.00, 0], [121.55, 25.05, 0]],
+}, 5000);
 
 setTimeout(() => {
   // Interrupts the first animation
-  model.animate({ lngLatAlts: [[121.60, 25.10, 0]] }, 2000);
+  model.animate({
+    lngLatAlts: [[121.55, 25.05, 0], [121.60, 25.10, 0]],
+  }, 2000);
 }, 1000);
 ```
 
@@ -223,7 +231,12 @@ Has no effect if no animation is running.
 
 **Example:**
 ```javascript
-const promise = model.animate({ lngLatAlts: [[121.55, 25.05, 0]] }, 5000);
+const promise = model.animate({
+  lngLatAlts: [
+    [121.50, 25.00, 0],  // start
+    [121.55, 25.05, 0],  // end
+  ],
+}, 5000);
 
 // Stop after 1 second
 setTimeout(() => {
