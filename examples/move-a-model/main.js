@@ -7,8 +7,8 @@ const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/bright',
   zoom: 18,
-  center: [148.9819, -35.3981],
-  pitch: 60,
+  center: [148.9818, -35.3981],
+  pitch: 45,
   maxPitch: 85,
   canvasContextAttributes: {
     antialias: true,
@@ -28,7 +28,7 @@ const layer = new ThreeLayer({
 const model = new ThreeModel({
   url: 'https://maplibre.org/maplibre-gl-js/docs/assets/34M_17/34M_17.gltf',
   type: 'gltf',
-  lngLatAlt: [148.9819, -35.39847, 0],
+  lngLatAlt: [148.9819, -35.39797, 0],
   rotation: {
     x: 90,
     y: 0,
@@ -49,9 +49,18 @@ map.addLayer(layer);
 model.addTo(layer);
 
 
-model.animate({
-  lngLatAlts: [
-    [148.9819, -35.39747, 0],
-    [148.9817, -35.39747, 0]
-  ],
-}, 5000);
+const waypoints = [
+  [[148.9819, -35.39847, 0], [148.9819, -35.39747, 0], [148.9817, -35.39747, 0]],
+  [[148.9817, -35.39747, 0], [148.9817, -35.39847, 0], [148.9819, -35.39847, 0]],
+];
+
+
+async function loop() {
+  for (const lngLatAlts of waypoints) {
+    // Start animate
+    await model.animate({ lngLatAlts }, 5000);
+  }
+  loop();
+}
+
+loop();
