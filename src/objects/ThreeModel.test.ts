@@ -164,15 +164,15 @@ describe('animate / stopAnimate', () => {
     expect(model.stopAnimate()).toBe(model);
   });
 
-  it('stopAnimate() clears all animation state', () => {
+  it('stopAnimate() stops further frame updates', () => {
     const model = new ThreeModel({ type: 'custom', object: new Object3D() });
     model.animate({ rotation: { x: 90 } }, 1000);
+    flush(0);
+    flush(250);  // t=0.25, rotation ≈ 22.5
     model.stopAnimate();
-    expect(model._animateTo).toBeUndefined();
-    expect(model._animateFrom).toBeUndefined();
-    expect(model._animateRafId).toBeUndefined();
-    expect(model._animateResolve).toBeUndefined();
-    expect(model._animateSegmentThresholds).toBeUndefined();
+    const frozenRotation = model.getRotation().x;
+    flush(500);  // would advance to t=0.5 if animation were still running
+    expect(model.getRotation().x).toBeCloseTo(frozenRotation);
   });
 
   it('animate() resolves when t reaches 1', async () => {
@@ -212,10 +212,16 @@ describe('animate / stopAnimate', () => {
     expect(model.getScale().z).toBeCloseTo(1.5);
   });
 
-  it('animate() interpolates position along a single waypoint at t=0.5', () => {
+  it('animate() snaps to lngLatAlts[0] immediately', () => {
     const model = new ThreeModel({ type: 'custom', object: new Object3D() });
-    model.setLngLatAlt([0, 0, 0]);
-    model.animate({ lngLatAlts: [[10, 0, 0]] }, 1000);
+    model.animate({ lngLatAlts: [[5, 0, 0], [10, 0, 0]] }, 1000);
+    expect(model.getLngLatAlt()!.lng).toBeCloseTo(5);
+    model.stopAnimate();
+  });
+
+  it('animate() interpolates position from lngLatAlts[0] to lngLatAlts[1] at t=0.5', () => {
+    const model = new ThreeModel({ type: 'custom', object: new Object3D() });
+    model.animate({ lngLatAlts: [[0, 0, 0], [10, 0, 0]] }, 1000);
     flush(0);
     flush(500);  // t = 0.5 → lng should be 5
     expect(model.getLngLatAlt()!.lng).toBeCloseTo(5);
@@ -223,8 +229,7 @@ describe('animate / stopAnimate', () => {
 
   it('animate() reaches the final waypoint at t=1', () => {
     const model = new ThreeModel({ type: 'custom', object: new Object3D() });
-    model.setLngLatAlt([0, 0, 0]);
-    const promise = model.animate({ lngLatAlts: [[10, 0, 0]] }, 1000);
+    const promise = model.animate({ lngLatAlts: [[0, 0, 0], [10, 0, 0]] }, 1000);
     flush(0);
     flush(1000);  // t = 1
     expect(model.getLngLatAlt()!.lng).toBeCloseTo(10);
