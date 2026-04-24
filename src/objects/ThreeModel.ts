@@ -35,8 +35,8 @@ export interface ThreeModelRotation {
  */
 export interface AnimateTarget {
   /**
-   * Ordered list of waypoints to travel through.
-   * The model moves from its current position → lngLatAlts[0] → lngLatAlts[1] → … → lngLatAlts[N-1].
+   * Ordered list of waypoints. lngLatAlts[0] is the animation start position;
+   * the model snaps there immediately and travels lngLatAlts[0] → lngLatAlts[1] → … → lngLatAlts[N-1].
    */
   lngLatAlts?: LngLatAltLike[];
   /**
@@ -401,26 +401,39 @@ export class ThreeModel {
    * Transitions the model toward the given target state over the specified duration.
    * Only properties present in `target` are interpolated; others remain unchanged.
    * If called while an animation is running, the previous animation is resolved immediately.
-   * @param {AnimateTarget} target - Desired end state. `lngLatAlts` defines an ordered list of waypoints.
+   * @param {AnimateTarget} target - Desired end state. `lngLatAlts[0]` is the start position; the model snaps there immediately and travels through subsequent waypoints.
    * @param {number} [duration=1000] - Transition duration in milliseconds.
    * @returns {Promise<this>} Resolves when the animation completes.
    */
   animate(target: AnimateTarget, duration: number = 1000): Promise<this> {
     this.stopAnimate();
 
-    this._animateTo = target;
     this._animateDuration = duration;
     this._animateStartTime = undefined;
-    this._animateFrom = {
-      lngLatAlt: this._lngLatAlt ? LngLatAlt.convert(this._lngLatAlt) : undefined,
-      rotation: { ...this._rotation },
-      scale: { ...this._scale },
-    };
+
+    if (target.lngLatAlts && target.lngLatAlts.length > 0) {
+      // lngLatAlts[0] is the start — snap to it immediately.
+      const startPos = LngLatAlt.convert(target.lngLatAlts[0]);
+      this.setLngLatAlt(startPos);
+      this._animateFrom = {
+        lngLatAlt: startPos,
+        rotation: { ...this._rotation },
+        scale: { ...this._scale },
+      };
+      this._animateTo = { ...target, lngLatAlts: target.lngLatAlts.slice(1) };
+    } else {
+      this._animateFrom = {
+        lngLatAlt: this._lngLatAlt ? LngLatAlt.convert(this._lngLatAlt) : undefined,
+        rotation: { ...this._rotation },
+        scale: { ...this._scale },
+      };
+      this._animateTo = target;
+    }
 
     // Precompute per-segment distance thresholds for constant-speed interpolation.
     this._animateSegmentThresholds = undefined;
-    if (target.lngLatAlts && target.lngLatAlts.length > 0 && this._animateFrom.lngLatAlt) {
-      const path = [this._animateFrom.lngLatAlt, ...target.lngLatAlts.map(p => LngLatAlt.convert(p))];
+    if (target.lngLatAlts && target.lngLatAlts.length > 1) {
+      const path = target.lngLatAlts.map(p => LngLatAlt.convert(p));
       this._animateSegmentThresholds = computeSegmentThresholds(path);
     }
 
