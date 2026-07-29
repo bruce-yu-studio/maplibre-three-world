@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { projectedUnitsPerMeter } from './projected-units-per-meter';
-import { WORLD_SIZE, EARTH_CIRCUMFERENCE } from '../configs';
+import { WORLD_SIZE, EARTH_CIRCUMFERENCE } from '../constants';
 
 describe('projectedUnitsPerMeter', () => {
   it('returns positive value', () => {

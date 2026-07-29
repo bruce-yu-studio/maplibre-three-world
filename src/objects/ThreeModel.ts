@@ -6,7 +6,7 @@ import type { ThreeLayer, ThreeEventArgs } from '../layers/ThreeLayer';
 import { Group } from 'three';
 import { LngLatAlt, LngLatAltLike } from '../geometries/LngLatAlt';
 import { lngLatAltToVector3, projectedUnitsPerMeter, computeSegmentThresholds, resolveWaypointSegment } from '../utils';
-import { DEG_TO_RAD } from '../configs';
+import { DEG_TO_RAD } from '../constants';
 
 
 /**

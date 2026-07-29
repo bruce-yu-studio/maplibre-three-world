@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { haversineDistance } from './haversine-distance';
-import { EARTH_RADIUS_M } from '../configs';
+import { EARTH_RADIUS_M } from '../constants';
 
 describe('haversineDistance', () => {
   it('returns 0 for identical points', () => {

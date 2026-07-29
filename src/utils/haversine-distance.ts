@@ -1,4 +1,4 @@
-import { EARTH_RADIUS_M, DEG_TO_RAD } from '../configs';
+import { EARTH_RADIUS_M, DEG_TO_RAD } from '../constants';
 
 /**
  * Calculates the 3D distance (metres) between two geographic points using the

@@ -4,7 +4,7 @@ import {
   WORLD_SIZE,
   MAX_VALID_LATITUDE,
   WORLD_SIZE_RATIO,
-} from '../configs';
+} from '../constants';
 import {
   makePerspectiveMatrix,
   clamp,
