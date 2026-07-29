@@ -1,4 +1,4 @@
-const EARTH_RADIUS_M = 6_371_000;
+import { EARTH_RADIUS_M, DEG_TO_RAD } from '../configs';
 
 /**
  * Calculates the 3D distance (metres) between two geographic points using the
@@ -16,11 +16,10 @@ export function haversineDistance(
   lng1: number, lat1: number, alt1: number,
   lng2: number, lat2: number, alt2: number,
 ): number {
-  const toRad = Math.PI / 180;
-  const dLat = (lat2 - lat1) * toRad;
-  const dLng = (lng2 - lng1) * toRad;
-  const rlat1 = lat1 * toRad;
-  const rlat2 = lat2 * toRad;
+  const dLat = (lat2 - lat1) * DEG_TO_RAD;
+  const dLng = (lng2 - lng1) * DEG_TO_RAD;
+  const rlat1 = lat1 * DEG_TO_RAD;
+  const rlat2 = lat2 * DEG_TO_RAD;
 
   const a =
     Math.sin(dLat / 2) ** 2 +
