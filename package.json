@@ -1,6 +1,6 @@
 {
   "name": "maplibre-three-world",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Seamlessly integrates MapLibre GL JS with Three.js, enabling 3D map visualizations, model rendering, and interactive events.",
   "keywords": [
     "maplibre",
@@ -27,14 +27,12 @@
   ],
   "scripts": {
     "build": "tsup",
-    "start": "concurrently \"live-server\" \"tsup --watch\"",
+    "start": "tsup --watch",
     "test": "vitest",
     "test:ci": "vitest run"
   },
   "devDependencies": {
     "@types/three": "^0.150.0",
-    "concurrently": "^9.2.1",
-    "live-server": "^1.2.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

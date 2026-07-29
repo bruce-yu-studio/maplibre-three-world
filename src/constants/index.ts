@@ -42,3 +42,8 @@ export const MAX_VALID_LATITUDE = 85.051129;
  * Ratio of tile size to world size.
  */
 export const WORLD_SIZE_RATIO = TILE_SIZE / WORLD_SIZE;
+
+/**
+ * Earth's mean radius in meters, used by the Haversine distance formula.
+ */
+export const EARTH_RADIUS_M = 6_371_000;

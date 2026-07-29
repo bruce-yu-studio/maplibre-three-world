@@ -6,7 +6,7 @@ import { LngLatAlt } from '../geometries/LngLatAlt';
 import { Scene, Group, Raycaster, Vector2 } from 'three';
 import { CameraAdapter } from '../core/CameraAdapter';
 import { ThreeRenderer } from '../core/ThreeRenderer';
-import { WORLD_SIZE } from '../configs';
+import { WORLD_SIZE } from '../constants';
 
 
 /**

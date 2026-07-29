@@ -5,8 +5,8 @@ import type { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import type { ThreeLayer, ThreeEventArgs } from '../layers/ThreeLayer';
 import { Group } from 'three';
 import { LngLatAlt, LngLatAltLike } from '../geometries/LngLatAlt';
-import { lngLatAltToVector3, projectedUnitsPerMeter } from '../utils';
-import { DEG_TO_RAD } from '../configs';
+import { lngLatAltToVector3, projectedUnitsPerMeter, computeSegmentThresholds, resolveWaypointSegment } from '../utils';
+import { DEG_TO_RAD } from '../constants';
 
 
 /**
@@ -26,6 +26,27 @@ export interface ThreeModelRotation {
   x: number;
   y: number;
   z: number;
+}
+
+
+/**
+ * Target state for a ThreeModel animation.
+ * Each property is optional; only specified properties will be interpolated.
+ */
+export interface AnimateTarget {
+  /**
+   * Ordered list of waypoints. lngLatAlts[0] is the animation start position;
+   * the model snaps there immediately and travels lngLatAlts[0] → lngLatAlts[1] → … → lngLatAlts[N-1].
+   */
+  lngLatAlts?: LngLatAltLike[];
+  /**
+   * Target rotation in degrees (partial — only specified axes are interpolated).
+   */
+  rotation?: Partial<ThreeModelRotation>;
+  /**
+   * Target scale (partial — only specified axes are interpolated).
+   */
+  scale?: Partial<ThreeModelScale>;
 }
 
 
@@ -131,6 +152,51 @@ export class ThreeModel {
    * @private
    */
   _ready: Promise<this>;
+  /**
+   * Target state for the active animation.
+   * @type {AnimateTarget|undefined}
+   * @private
+   */
+  _animateTo?: AnimateTarget;
+  /**
+   * Snapshot of the model state captured when animate() was called.
+   * @private
+   */
+  _animateFrom?: {
+    lngLatAlt?: LngLatAlt;
+    rotation: ThreeModelRotation;
+    scale: ThreeModelScale;
+  };
+  /**
+   * Duration of the active animation in milliseconds.
+   * @type {number}
+   * @private
+   */
+  _animateDuration: number = 0;
+  /**
+   * requestAnimationFrame handle for the active animation loop.
+   * @type {number|undefined}
+   * @private
+   */
+  _animateRafId?: number;
+  /**
+   * Timestamp (ms) when animate() started its first frame.
+   * @type {number|undefined}
+   * @private
+   */
+  _animateStartTime?: number;
+  /**
+   * Resolve function for the Promise returned by animate().
+   * @private
+   */
+  _animateResolve?: (value: this) => void;
+  /**
+   * Cumulative distance thresholds for each waypoint segment, normalized to [0, 1].
+   * Entry i represents the t-value at which segment i starts.
+   * Computed once in animate() for constant-speed interpolation along lngLatAlts.
+   * @private
+   */
+  _animateSegmentThresholds?: number[];
 
 
   /**
@@ -230,8 +296,8 @@ export class ThreeModel {
 
 
   /**
-   * Returns the popup attached to the model, if any.
-   * @returns {Popup|null}
+   * Returns the current rotation of the model in degrees.
+   * @returns {ThreeModelRotation}
    */
   getRotation(): ThreeModelRotation {
     return this._rotation;
@@ -332,6 +398,72 @@ export class ThreeModel {
 
 
   /**
+   * Transitions the model toward the given target state over the specified duration.
+   * Only properties present in `target` are interpolated; others remain unchanged.
+   * If called while an animation is running, the previous animation is resolved immediately.
+   * @param {AnimateTarget} target - Desired end state. `lngLatAlts[0]` is the start position; the model snaps there immediately and travels through subsequent waypoints.
+   * @param {number} [duration=1000] - Transition duration in milliseconds.
+   * @returns {Promise<this>} Resolves when the animation completes.
+   */
+  animate(target: AnimateTarget, duration: number = 1000): Promise<this> {
+    this.stopAnimate();
+
+    this._animateDuration = duration;
+    this._animateStartTime = undefined;
+
+    if (target.lngLatAlts && target.lngLatAlts.length > 0) {
+      // lngLatAlts[0] is the start — snap to it immediately.
+      const startPos = LngLatAlt.convert(target.lngLatAlts[0]);
+      this.setLngLatAlt(startPos);
+      this._animateFrom = {
+        lngLatAlt: startPos,
+        rotation: { ...this._rotation },
+        scale: { ...this._scale },
+      };
+      this._animateTo = { ...target, lngLatAlts: target.lngLatAlts.slice(1) };
+    } else {
+      this._animateFrom = {
+        lngLatAlt: this._lngLatAlt ? LngLatAlt.convert(this._lngLatAlt) : undefined,
+        rotation: { ...this._rotation },
+        scale: { ...this._scale },
+      };
+      this._animateTo = target;
+    }
+
+    // Precompute per-segment distance thresholds for constant-speed interpolation.
+    this._animateSegmentThresholds = undefined;
+    if (target.lngLatAlts && target.lngLatAlts.length > 1) {
+      const path = target.lngLatAlts.map(p => LngLatAlt.convert(p));
+      this._animateSegmentThresholds = computeSegmentThresholds(path);
+    }
+
+    return new Promise<this>((resolve) => {
+      this._animateResolve = resolve;
+      this._animateRafId = requestAnimationFrame(this._animateTick);
+    });
+  }
+
+
+  /**
+   * Stops the active animation immediately, resolving its Promise with the current state.
+   * @returns {this}
+   */
+  stopAnimate(): this {
+    if (this._animateRafId !== undefined) {
+      cancelAnimationFrame(this._animateRafId);
+      this._animateRafId = undefined;
+    }
+    this._animateResolve?.(this);
+    this._animateTo = undefined;
+    this._animateFrom = undefined;
+    this._animateStartTime = undefined;
+    this._animateResolve = undefined;
+    this._animateSegmentThresholds = undefined;
+    return this;
+  }
+
+
+  /**
    * Adds the model to a ThreeLayer.
    * @param {ThreeLayer} threeLayer
    * @returns {this}
@@ -350,6 +482,7 @@ export class ThreeModel {
    * @returns {this}
    */
   remove(): this {
+    this.stopAnimate();
     if (this._layer) {
       this._layer._removeObject(this);
       this._layer.off('click', this._modelOnClick);
@@ -467,6 +600,87 @@ export class ThreeModel {
     if (event.target === this) {
       this.togglePopup();
     }
+  }
+
+
+  /**
+   * Internal RAF tick that interpolates properties toward the target state.
+   * @param {number} time - DOMHighResTimeStamp provided by requestAnimationFrame.
+   * @returns {void}
+   * @private
+   */
+  _animateTick = (time: number): void => {
+    if (!this._animateTo || !this._animateFrom) return;
+
+    if (this._animateStartTime === undefined) {
+      this._animateStartTime = time;
+    }
+
+    const t = Math.min((time - this._animateStartTime) / this._animateDuration, 1);
+
+    const { lngLatAlt: fromPos, rotation: fromRot, scale: fromScale } = this._animateFrom;
+
+    // Waypoint interpolation: path = [fromPos, wp0, wp1, …, wpN-1]
+    if (this._animateTo.lngLatAlts !== undefined && this._animateTo.lngLatAlts.length > 0 && fromPos !== undefined) {
+      const waypoints = this._animateTo.lngLatAlts.map(p => LngLatAlt.convert(p));
+      const segmentCount = waypoints.length;
+
+      let segmentIndex: number;
+      let localT: number;
+
+      if (this._animateSegmentThresholds) {
+        // Constant-speed: each segment occupies a t-range proportional to its distance.
+        ({ segmentIndex, localT } = resolveWaypointSegment(t, this._animateSegmentThresholds, segmentCount));
+      } else {
+        // Fallback: equal time per segment.
+        const segmentT = t * segmentCount;
+        segmentIndex = Math.min(Math.floor(segmentT), segmentCount - 1);
+        localT = segmentT - segmentIndex;
+      }
+
+      const segFrom = segmentIndex === 0 ? fromPos : waypoints[segmentIndex - 1];
+      const segTo = waypoints[segmentIndex];
+
+      this.setLngLatAlt([
+        segFrom.lng + (segTo.lng - segFrom.lng) * localT,
+        segFrom.lat + (segTo.lat - segFrom.lat) * localT,
+        segFrom.alt + (segTo.alt - segFrom.alt) * localT,
+      ]);
+    }
+
+    if (this._animateTo.rotation !== undefined) {
+      const toRot = { ...fromRot, ...this._animateTo.rotation };
+      this.setRotation(
+        fromRot.x + (toRot.x - fromRot.x) * t,
+        fromRot.y + (toRot.y - fromRot.y) * t,
+        fromRot.z + (toRot.z - fromRot.z) * t,
+      );
+    }
+
+    if (this._animateTo.scale !== undefined) {
+      const toScale = { ...fromScale, ...this._animateTo.scale };
+      this.setScale(
+        fromScale.x + (toScale.x - fromScale.x) * t,
+        fromScale.y + (toScale.y - fromScale.y) * t,
+        fromScale.z + (toScale.z - fromScale.z) * t,
+      );
+    }
+
+    this._layer?._repaint();
+
+    if (t >= 1) {
+      const resolve = this._animateResolve!;
+      this._animateTo = undefined;
+      this._animateFrom = undefined;
+      this._animateStartTime = undefined;
+      this._animateRafId = undefined;
+      this._animateResolve = undefined;
+      this._animateSegmentThresholds = undefined;
+      resolve(this);
+      return;
+    }
+
+    this._animateRafId = requestAnimationFrame(this._animateTick);
   }
 
 

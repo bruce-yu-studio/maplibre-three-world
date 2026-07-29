@@ -1,4 +1,4 @@
-import { RAD_TO_DEG } from '../configs';
+import { RAD_TO_DEG } from '../constants';
 
 
 /**

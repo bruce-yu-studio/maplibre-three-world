@@ -3,7 +3,7 @@ import {
   DEG_TO_RAD,
   EARTH_RADIUS,
   PROJECTION_WORLD_SIZE,
-} from '../configs';
+} from '../constants';
 import { projectedUnitsPerMeter } from './projected-units-per-meter';
 
 

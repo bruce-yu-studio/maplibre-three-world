@@ -39,3 +39,6 @@ coverage/
 *.lock
 *.tgz
 *.tmp
+
+# AI Agent
+.claude

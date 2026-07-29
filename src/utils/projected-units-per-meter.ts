@@ -2,7 +2,7 @@ import {
   DEG_TO_RAD,
   EARTH_CIRCUMFERENCE,
   WORLD_SIZE,
-} from '../configs';
+} from '../constants';
 
 
 /**

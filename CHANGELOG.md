@@ -1,6 +1,17 @@
 # Maplibre Three World Changelog
 
 
+## [1.4.0] - 2026-04-20
+
+### Added
+- Add `animate()` method to `ThreeModel` for smooth transitions of position, rotation, and scale with multi-waypoint constant-speed interpolation.
+- Add `stopAnimate()` method to `ThreeModel` to immediately stop and resolve an active animation.
+- Extract animation calculation utilities `computeSegmentThresholds` and `resolveWaypointSegment` to `src/utils/animate-waypoints.ts`.
+
+### Documentation
+- Add `animate()` and `stopAnimate()` documentation to `docs/three-model.md`.
+
+
 ## [1.3.1] - 2026-03-03
 
 ### Documentation
