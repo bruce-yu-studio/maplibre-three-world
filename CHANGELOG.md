@@ -11,6 +11,10 @@
 ### Documentation
 - Add `animate()` and `stopAnimate()` documentation to `docs/three-model.md`.
 
+### Chore
+- Remove `live-server` from `npm start`; run `tsup --watch` only.
+- Rename `src/configs` to `src/constants` and move `EARTH_RADIUS_M` there; add unit tests for `haversineDistance`.
+
 
 ## [1.3.1] - 2026-03-03
 
